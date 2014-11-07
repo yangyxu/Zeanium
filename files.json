@@ -1,0 +1,17 @@
+{
+    "zn": [
+        "src/zn/zn.js",
+        "src/zn/builtin.js",
+        "src/zn/fix.js",
+        "src/zn/class.js"
+    ],
+    "core": [
+
+    ],
+    "dom": [
+
+    ],
+    "component": [
+
+    ]
+}
