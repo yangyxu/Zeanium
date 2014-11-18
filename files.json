@@ -1,17 +1,17 @@
 {
-    "zn": [
-        "src/zn/zn.js",
-        "src/zn/builtin.js",
-        "src/zn/fix.js",
-        "src/zn/class.js"
-    ],
     "core": [
-
+        "src/core/zn.js",
+        "src/core/builtin.js",
+        "src/core/fix.js",
+        "src/core/class.js"
     ],
     "dom": [
-
+        "src/dom/Element.js"
     ],
     "component": [
+
+    ],
+    "view": [
 
     ]
 }

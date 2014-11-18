@@ -1,0 +1,1 @@
+!function(a){a.class("zn.dom.Element",{properties:{aa:{set:function(a){this._aa=a,console.log(a)},get:function(){return null}}},methods:{init:function(a){console.log(a)}}});var b=new a.dom.Element("test");b.aa="I am div",console.log(b),console.log(b.aa)}(zn);

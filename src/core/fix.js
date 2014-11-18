@@ -63,7 +63,7 @@
                     _keys.push(_property);
                 }
             }
-            console.log(this);
+
             return _keys;
         },
         create: (function (){
@@ -103,7 +103,6 @@
         Object.defineProperty = function (obj, propertyName, descriptor) {
             return __fixObject__.defineProperty(obj, propertyName, descriptor);
         };
-
     }
 
 })(zn);

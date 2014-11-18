@@ -3,7 +3,7 @@
  */
 (function (zn) {
 
-    var __builtin_functions__ = {
+    var __builtin__ = {
         toString: function (target){
             return Object.prototype.toString.call(target);
         },
@@ -274,6 +274,6 @@
         }
     };
 
-    __builtin_functions__.extend(zn, __builtin_functions__);
+    __builtin__.extend(zn, __builtin__);
 
 })(zn);

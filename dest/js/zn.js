@@ -4,7 +4,6 @@
 var zn = {
     version: '0.0.1',
     debug: false,
-    path: '',
     global: (function () { return this; }).call(null)
 };
 
@@ -400,13 +399,13 @@ if (typeof module !== 'undefined' && module.exports) {
 
 })(zn);
 /**
- * Class define
+ * Class Mechanism
  */
 (function (zn) {
 
     var MEMBER_PREFIX = '@',
         id = 1,
-        GLOBAL = zn.GLOBAL;
+        GLOBAL = zn.global;
 
     /**
      * Define an event for target
@@ -495,8 +494,8 @@ if (typeof module !== 'undefined' && module.exports) {
         }
 
         if (overridden) {
-            getter.__base__ = target[key].getter;
-            setter.__base__ = target[key].setter;
+            getter.__super__ = target[key].getter;
+            setter.__super__ = target[key].setter;
         }
 
         target[key] = {
@@ -533,7 +532,7 @@ if (typeof module !== 'undefined' && module.exports) {
         };
 
         if (name in target) {
-            meta.value.__base__ = target[name];
+            meta.value.__super__ = target[name];
         }
 
         target[name] = meta.value;
@@ -830,13 +829,13 @@ if (typeof module !== 'undefined' && module.exports) {
             this.dispose();
         },
         /**
-         * Call overridden method from base class
-         * @method base
+         * Call overridden method from super class
+         * @method super
          */
-        base: function () {
-            var baseMethod = this.base.caller.__base__;
-            if (baseMethod) {
-                return baseMethod.apply(this, arguments);
+        super: function () {
+            var superMethod = this.super.caller.__super__;
+            if (superMethod) {
+                return superMethod.apply(this, arguments);
             }
         },
         /**
@@ -873,7 +872,7 @@ if (typeof module !== 'undefined' && module.exports) {
     };
 
     /**
-     * The default base class for all classes defined in znJS.
+     * The default super class for all classes defined in znJS.
      * @private
      */
     function __Object__() {
@@ -895,7 +894,7 @@ if (typeof module !== 'undefined' && module.exports) {
      * Define a class
      * @method define
      * @param [name] {String}
-     * @param [base] {Function}
+     * @param [super] {Function}
      * @param meta {Object}
      * @returns {Function}
      */
@@ -903,34 +902,34 @@ if (typeof module !== 'undefined' && module.exports) {
         var args = arguments;
         var nArgs = args.length;
         var arg0 = args[0];
-        var name, base, meta;
+        var name, _super, meta;
 
         if (nArgs === 3) {
             name = arg0;
-            base = args[1];
+            _super = args[1];
             meta = args[2];
 
-            if (!zn.is(base, 'function')) {
-                throw new Error('Invalid base class.');
+            if (!zn.is(_super, 'function')) {
+                throw new Error('Invalid _super class.');
             }
         }
         else if (nArgs === 2) {
             if (zn.is(arg0, 'string')) {
                 name = arg0;
-                base = null;
+                _super = null;
             }
             else if (zn.is(arg0, 'function')) {
                 name = null;
-                base = arg0;
+                _super = arg0;
             }
             else {
-                throw new Error('Invalid base class.');
+                throw new Error('Invalid _super class.');
             }
             meta = args[1];
         }
         else if (nArgs === 1) {
             name = null;
-            base = null;
+            _super = null;
             meta = arg0;
             if (!zn.is(meta, 'object')) {
                 throw new Error('The meta argument must be an object.');
@@ -941,7 +940,7 @@ if (typeof module !== 'undefined' && module.exports) {
         }
 
         meta = meta || {};
-        base = base || __Object__;
+        _super = _super || __Object__;
 
         var static = meta.static || false;
         var partial = meta.partial || false;
@@ -953,13 +952,13 @@ if (typeof module !== 'undefined' && module.exports) {
         var props = meta.properties || {};
         var methods = meta.methods || {};
         var prototype;
-        var Class, BaseClass;
+        var Class, SuperClass;
 
-        if (base.__static__) {
+        if (_super.__static__) {
             throw new Error('Static class cannot be inherited.');
         }
 
-        if (base.__final__) {
+        if (_super.__final__) {
             throw new Error('Final class cannot be inherited.');
         }
 
@@ -987,8 +986,8 @@ if (typeof module !== 'undefined' && module.exports) {
                     throw new Error('Partial class "' + name + '" must not be static.');
                 }
 
-                if (Class.__base__ !== base && Class.__base__ !== __Object__) {
-                    throw new Error('Partial class "' + name + '" must have consistent base class.');
+                if (Class.__super__ !== _super && Class.__super__ !== __Object__) {
+                    throw new Error('Partial class "' + name + '" must have consistent super class.');
                 }
             }
             else {
@@ -1019,12 +1018,12 @@ if (typeof module !== 'undefined' && module.exports) {
                     };
             }
 
-            if (Class.__base__ !== base) {
-                BaseClass = function () {
+            if (Class.__super__ !== _super) {
+                SuperClass = function () {
                 };
 
-                BaseClass.prototype = base.prototype;
-                prototype = new BaseClass();
+                SuperClass.prototype = _super.prototype;
+                prototype = new SuperClass();
                 prototype.constructor = Class;
                 prototype.__type__ = name;
 
@@ -1042,16 +1041,16 @@ if (typeof module !== 'undefined' && module.exports) {
         zn.extend(Class, sharedMethods, classMethods, {
             __id__: id++,
             __name__: name,
-            __base__: base,
+            __super__: _super,
             __partial__: partial,
             __abstract__: abstract,
             __static__: static,
             __final__: final,
-            __statics__: zn.extend({}, base.__statics__, statics),
-            __events__: base.__events__.slice(0),
-            __properties__: base.__properties__.slice(0),
-            __methods__: base.__methods__.slice(0),
-            __mixins__: base.__mixins__.concat(mixins),
+            __statics__: zn.extend({}, _super.__statics__, statics),
+            __events__: _super.__events__.slice(0),
+            __properties__: _super.__properties__.slice(0),
+            __methods__: _super.__methods__.slice(0),
+            __mixins__: _super.__mixins__.concat(mixins),
             __meta__: meta,
             toString: function () {
                 return '[Class ' + (this.__name__ || 'Anonymous') + ']';
@@ -1110,6 +1109,10 @@ if (typeof module !== 'undefined' && module.exports) {
 
         if (prototype.__define__) {
             prototype.__define__.call(Class);
+        }
+
+        if(name){
+            zn.path(GLOBAL, name, Class);
         }
 
         return Class;

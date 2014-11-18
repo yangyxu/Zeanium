@@ -8,23 +8,39 @@ module.exports = function (grunt) {
             }
         },
         jshint: {
-            base: {
-                src: '<%= pkg.zn %>'
+            core: {
+                src: '<%= pkg.core %>'
+            },
+            dom: {
+                src: '<%= pkg.dom %>'
             },
             options: {
                 eqnull: true
             }
         },
         concat: {
-            base: {
-                src: '<%= pkg.zn %>',
+            core: {
+                src: '<%= pkg.core %>',
                 dest: 'dest/js/zn.js'
+            },
+            dom: {
+                src: '<%= pkg.dom %>',
+                dest: 'dest/js/zn-dom.js'
             }
         },
         uglify: {
-            base: {
+            core: {
                 src: ['dest/js/zn.js'],
                 dest: 'dest/js/zn.minx.js',
+                options: {
+                    beautify: {
+                        ascii_only: true
+                    }
+                }
+            },
+            dom: {
+                src: ['dest/js/zn-dom.js'],
+                dest: 'dest/js/zn-dom.minx.js',
                 options: {
                     beautify: {
                         ascii_only: true
