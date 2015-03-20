@@ -6,6 +6,7 @@ Zeanium代码规范
 
     For example(zeanium):
     
+>    
     |--zeanium
       |--dest(Automatic generation)
         |--js
@@ -23,10 +24,12 @@ Zeanium代码规范
       |--Gruntfile.js
       |--README.md
 
+
 2. 项目(Project)
 
     For example(zn-cms):
-    
+   
+>
     |--zn-cms
       |--dest(Automatic generation)
         |--css
@@ -46,6 +49,8 @@ Zeanium代码规范
       |--Gruntfile.js
       |--README.md
       
+
+
 # 文件名
 1. 类文件：只定义一个类的文件必须必须与类名一致，每个单词首字母大写。如：`MyClass.js`
 2. 配置文件：
