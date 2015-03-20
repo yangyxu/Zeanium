@@ -8,23 +8,25 @@
 
         },
         methods: {
+            getClass: function (){
+
+            },
+            setClass: function (){
+
+            },
             addClass: function (inClassName){
-                console.log(this._dom);
-                console.log(inClassName);
-            },
-            deleteClass: function (inClassName){
 
             },
-            ec: function (inClassName){
+            removeClass: function (inClassName){
 
             },
-            tc: function (inClassName){
+            hasClass: function (inClassName){
+
+            },
+            toggleClass: function (inClassName){
 
             }
         }
     });
-
-    var _eDiv = new zn.dom.Element('test');
-    console.log(_eDiv.ac('body'));
 
 })(zn);

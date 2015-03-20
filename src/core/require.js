@@ -1,5 +1,5 @@
 /**
- * Fix Javascript Object Functions
+ * require method
  */
 (function (zn){
 

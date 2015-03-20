@@ -3,6 +3,9 @@
  */
 (function (zn){
 
+    var __slice = Array.prototype.slice,
+        __hasOwnProperty = Object.prototype.hasOwnProperty;
+
     var __fixArray__ = {
         isArray: function (target){
             /*
@@ -10,7 +13,7 @@
              * 1, return Object.prototype.toString.call(target) === '[object Array]';
              * 2, return target&&target.constructor === Array;
              * */
-            return Object.prototype.toString.call(target) === '[object Array]';
+            return target && zn.toString(target) === '[object Array]' && target.constructor === Array;
         }
     };
 
@@ -47,7 +50,7 @@
         bind: function (context){
             var _self = this;
             return function (){
-                return _self.apply(context, Array.prototype.slice.call(arguments));
+                return _self.apply(context, __slice.call(arguments, 1));
             };
         }
     };
@@ -59,7 +62,7 @@
             }
             var _keys = [], _property;
             for (_property in obj){
-                if(Object.prototype.hasOwnProperty.call(obj,_property)){
+                if(__hasOwnProperty.call(obj, _property)){
                     _keys.push(_property);
                 }
             }
