@@ -1,9 +1,9 @@
 /**
- * Created by yangyxu on 3/11/15.
+ * Created by yangyxu on 3/20/15.
  */
-module("zn");
+module("builtin");
 
-test("zn", function () {
+test("builtin function", function () {
     ok(zn, 'window.zn global var is exist.');
     ok(zn.version, "zn's version is exist.");
 });
