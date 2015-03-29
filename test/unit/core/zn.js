@@ -3,7 +3,7 @@
  */
 module("zn");
 
-test("zn", function () {
+test("zn-core", function () {
     ok(zn, 'window.zn global var is exist.');
-    ok(zn.version, "zn's version is exist.");
+    ok(zn.version, "zn's version is v"+zn.version);
 });

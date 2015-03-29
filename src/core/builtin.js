@@ -47,11 +47,13 @@
         path: function (target, path, value) {
             var _result = target||{};
             if (path) {
-                var _tokens = path.split('.'), _token,
-                    i = 0, _length = _tokens.length;
+                var _tokens = path.split('.'),
+                    _token,
+                    _len = _tokens.length,
+                    i = 0;
 
                 if (arguments.length < 3) {
-                    for (; _result && i < _length; i++) {
+                    for (; _result && i < _len; i++) {
                         _token = _tokens[i];
                         if (_result.__get__) {
                             _result = _result.__get__(_token);
@@ -60,8 +62,8 @@
                         }
                     }
                 } else {
-                    _length -= 1;
-                    for (; _result && i < _length; i++) {
+                    _len -= 1;
+                    for (; _result && i < _len; i++) {
                         _token = _tokens[i];
                         if (_result.__get__) {
                             _result = _result.__get__(_token);
@@ -87,21 +89,22 @@
         },
         invoke: function (target, path, args) {
             if (target && path) {
-                var index = path.lastIndexOf('.');
-                var context, method;
+                var _index = path.lastIndexOf('.'),
+                    _context,
+                    _method;
 
-                if (index > 0) {
-                    context = zn.path(target, path.substring(0, index));
-                    if (context) {
-                        method = context[path.substring(index + 1)];
+                if (_index > 0) {
+                    _context = zn.path(target, path.substring(0, _index));
+                    if (_context) {
+                        _method = _context[path.substring(_index + 1)];
                     }
                 } else {
-                    context = target;
-                    method = target[path];
+                    _context = target;
+                    _method = target[path];
                 }
 
-                if (method) {
-                    method.apply(context, args);
+                if (_method) {
+                    _method.apply(_context, args);
                 }
             }
         }
@@ -143,14 +146,14 @@
                     if (zn.is(target, 'array')) {
                         return target.slice(0);
                     } else {
-                        var result = {};
+                        var _result = {};
                         for (var key in target) {
                             if (target.hasOwnProperty(key)) {
-                                result[key] = target[key];
+                                _result[key] = target[key];
                             }
                         }
 
-                        return result;
+                        return _result;
                     }
                 }
             } else {
