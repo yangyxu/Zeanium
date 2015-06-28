@@ -58,7 +58,7 @@
                         if (_result.__get__) {
                             _result = _result.__get__(_token);
                         } else {
-                            _result = _result[token];
+                            _result = _result[_token];
                         }
                     }
                 } else {
@@ -75,7 +75,7 @@
                     _token = _tokens[i];
                     if (_result) {
                         if (_result.__set__) {
-                            _result.__set__(_token, _value);
+                            _result.__set__(_token, value);
                         } else {
                             _result[_token] = value;
                         }
@@ -110,7 +110,7 @@
         }
     };
 
-    var __objectBasePrototypePrivateMethods__ = {
+    var __builtinZNObject__ = {
         toString: function (target){
             if(target&&target.__toString__){
                 return target.__toString__();
@@ -124,7 +124,7 @@
                     target.__each__(callback, context);
                 } else {
                     var _len = target.length;
-                    if (_len >= 0 && __toString.call(target) === '[object Array]') {
+                    if (_len > 0 && __toString.call(target) === '[object Array]') {
                         for (var i = 0; i < _len; i++) {
                             callback.call(context, target[i], i);
                         }
@@ -172,13 +172,11 @@
                 return target.__is__(type);
             } else {
                 if (typeof type === 'string') {
-                    var _targetType = __toString.call(target).slice(8, -1).toLowerCase();
-                    type = type.toLowerCase();
-                    switch (type) {
+                    switch (type.toLowerCase()) {
                         case 'plain':
                             return target && target.constructor === Object;
                         default:
-                            return _targetType === type;
+                            return this.type(target) === type;
                     }
                 } else if (typeof type === 'function') {
                     return target instanceof type;
