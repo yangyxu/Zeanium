@@ -263,8 +263,9 @@
                 }
             }
         }
-    }
+    };
 
     __builtin__.extend(zn, __builtin__);
+    __builtin__.extend(zn, __builtinZNObject__);
 
 })(zn);

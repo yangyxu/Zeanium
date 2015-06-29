@@ -1,1 +1,1 @@
-!function(a){a.class("zn.dom.Element",{properties:{aa:{set:function(a){this._aa=a,console.log(a)},get:function(){return null}}},methods:{init:function(a){console.log(a)}}});var b=new a.dom.Element("test");b.aa="I am div",console.log(b),console.log(b.aa)}(zn);
+!function(a){a.class("zn.dom.Element",{properties:{dom:{readonly:!0,get:function(){return this._dom}}},methods:{init:function(a){this._dom=a}}})}(zn);

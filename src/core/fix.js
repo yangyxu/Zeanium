@@ -6,6 +6,15 @@
     var __slice = Array.prototype.slice,
         __hasOwnProperty = Object.prototype.hasOwnProperty;
 
+    var __fixJSON__ = {
+        parse: function (value){
+
+        },
+        stringify: function (value){
+
+        }
+    };
+
     var __fixArray__ = {
         isArray: function (target){
             /*
@@ -69,6 +78,19 @@
 
             return _keys;
         },
+        values: function (obj){
+            if(obj !== Object(obj)){
+                throw new TypeError('Object.keys called on a non-object');
+            }
+            var _values = [], _property;
+            for (_property in obj){
+                if(__hasOwnProperty.call(obj, _property)){
+                    _values.push(obj[_property]);
+                }
+            }
+
+            return _values;
+        },
         create: (function (){
             var _object = function (){}, _self = this;
             return function (obj, properties){
@@ -79,15 +101,16 @@
                 if (typeof obj !== 'object'){
                     throw new TypeError('Argument must be an object');
                 }
-
-                _self.defineProperties(obj, properties);
+                zn.each(properties, function (property, descriptor){
+                    __fixObject__.defineProperty(obj, property, descriptor);
+                });
                 _object.prototype = obj;
                 return new _object();
             };
         })(),
-        defineProperty: function (obj, propertyName, descriptor){
-            if (obj && propertyName && descriptor && descriptor.hasOwnProperty('value')) {
-                obj[propertyName] = descriptor.value;
+        defineProperty: function (obj, property, descriptor){
+            if (obj && property && descriptor && descriptor.hasOwnProperty('value')) {
+                obj[property] = descriptor.value;
             }
 
             return obj;
@@ -103,8 +126,8 @@
         Object.defineProperty({}, 'zn', {});
     }
     catch (ex) {
-        Object.defineProperty = function (obj, propertyName, descriptor) {
-            return __fixObject__.defineProperty(obj, propertyName, descriptor);
+        Object.defineProperty = function (obj, property, descriptor) {
+            return __fixObject__.defineProperty(obj, property, descriptor);
         };
     }
 

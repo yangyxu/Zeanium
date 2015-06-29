@@ -14,59 +14,133 @@ if (typeof module !== 'undefined' && module.exports) {
  * Builtin Functions
  */
 (function (zn) {
+    var __toString = Object.prototype.toString;
 
-    var __builtin_functions__ = {
-        toString: function (target){
-            return Object.prototype.toString.call(target);
-        },
-        fix: function (target, fixs){
-            for(var key in fixs){
-                if(typeof target[key] !== 'function'){
-                    target[key] = fixs[key];
-                }
-            }
-
-            return this;
-        },
-        extend: function (target){
-            for (var i = 1, length = arguments.length; i < length; i++) {
-                var arg = arguments[i];
-                for (var key in arg) {
-                    if (arg.hasOwnProperty(key)) {
-                        target[key] = arg[key];
+    var __builtin__ = {
+        fix: function (target){
+            var _target = target||{};
+            for (var i = 1, _len = arguments.length; i < _len; i++) {
+                var _fix = arguments[i];
+                for (var key in _fix) {
+                    if (_fix.hasOwnProperty(key) && typeof _target[key] !== 'function') {
+                        _target[key] = _fix[key];
                     }
                 }
             }
 
-            return target;
+            return _target;
+        },
+        extend: function (target){
+            var _target = target||{};
+            for (var i = 1, _len = arguments.length; i < _len; i++) {
+                var _args = arguments[i];
+                for (var key in _args) {
+                    if (_args.hasOwnProperty(key)) {
+                        _target[key] = _args[key];
+                    }
+                }
+            }
+
+            return _target;
         },
         overwrite: function (target){
             var _target = target||{};
-            for(var i= 1, _len = arguments.length; i<_len; i++){
+            for(var i = 1, _len = arguments.length; i < _len; i++){
                 var _args = arguments[i];
                 for(var key in _args){
-                    if(_args.hasOwnProperty(key)){
-                        if(_target[key]===undefined){
-                            _target[key] = _args[key];
-                        }
+                    if(_args.hasOwnProperty(key) && _target[key]===undefined){
+                        _target[key] = _args[key];
                     }
                 }
             }
+
             return _target;
+        },
+        path: function (target, path, value) {
+            var _result = target||{};
+            if (path) {
+                var _tokens = path.split('.'),
+                    _token,
+                    _len = _tokens.length,
+                    i = 0;
+
+                if (arguments.length < 3) {
+                    for (; _result && i < _len; i++) {
+                        _token = _tokens[i];
+                        if (_result.__get__) {
+                            _result = _result.__get__(_token);
+                        } else {
+                            _result = _result[_token];
+                        }
+                    }
+                } else {
+                    _len -= 1;
+                    for (; _result && i < _len; i++) {
+                        _token = _tokens[i];
+                        if (_result.__get__) {
+                            _result = _result.__get__(_token);
+                        } else {
+                            _result = _result[_token] = _result[_token] || {};
+                        }
+                    }
+
+                    _token = _tokens[i];
+                    if (_result) {
+                        if (_result.__set__) {
+                            _result.__set__(_token, value);
+                        } else {
+                            _result[_token] = value;
+                        }
+
+                        _result = value;
+                    }
+                }
+            }
+
+            return _result;
+        },
+        invoke: function (target, path, args) {
+            if (target && path) {
+                var _index = path.lastIndexOf('.'),
+                    _context,
+                    _method;
+
+                if (_index > 0) {
+                    _context = zn.path(target, path.substring(0, _index));
+                    if (_context) {
+                        _method = _context[path.substring(_index + 1)];
+                    }
+                } else {
+                    _context = target;
+                    _method = target[path];
+                }
+
+                if (_method) {
+                    _method.apply(_context, args);
+                }
+            }
+        }
+    };
+
+    var __builtinZNObject__ = {
+        toString: function (target){
+            if(target&&target.__toString__){
+                return target.__toString__();
+            } else {
+                return __toString.call(target);
+            }
         },
         each: function (target, callback, context) {
             if (target && callback) {
-                if (target.__class__ && target.__each__) {
+                if(target.__each__){
                     target.__each__(callback, context);
-                }
-                else {
-                    var length = target.length;
-                    if (length >= 0&&Object.prototype.toString.call(target) === '[object Array]') {
-                        for (var i = 0; i < length; i++) {
+                } else {
+                    var _len = target.length;
+                    if (_len > 0 && __toString.call(target) === '[object Array]') {
+                        for (var i = 0; i < _len; i++) {
                             callback.call(context, target[i], i);
                         }
-                    }
-                    else {
+                    } else {
                         for (var key in target) {
                             if (target.hasOwnProperty(key)) {
                                 callback.call(context, target[key], key);
@@ -78,53 +152,45 @@ if (typeof module !== 'undefined' && module.exports) {
         },
         clone: function (target) {
             if (target) {
-                if (target.__clone__) {
+                if (target.__clone__){
                     return target.__clone__();
-                }
-                else {
+                } else {
                     if (zn.is(target, 'array')) {
                         return target.slice(0);
-                    }
-                    else {
-                        var result = {};
+                    } else {
+                        var _result = {};
                         for (var key in target) {
                             if (target.hasOwnProperty(key)) {
-                                result[key] = target[key];
+                                _result[key] = target[key];
                             }
                         }
 
-                        return result;
+                        return _result;
                     }
                 }
-            }
-            else {
+            } else {
                 return target;
             }
         },
         type: function (target) {
             if (target && target.__type__) {
                 return target.__type__;
-            }
-            else {
-                return Object.prototype.toString.call(target).slice(8, -1).toLowerCase();
+            } else {
+                return __toString.call(target).slice(8, -1).toLowerCase();
             }
         },
         is: function (target, type) {
             if (target && target.__is__) {
                 return target.__is__(type);
-            }
-            else {
+            } else {
                 if (typeof type === 'string') {
-                    type = type.toLowerCase();
-                    var _targetType = Object.prototype.toString.call(target).slice(8, -1).toLowerCase();
-                    switch (type) {
+                    switch (type.toLowerCase()) {
                         case 'plain':
                             return target && target.constructor === Object;
                         default:
-                            return _targetType === type;
+                            return this.type(target) === type;
                     }
-                }
-                else if (typeof type === 'function') {
+                } else if (typeof type === 'function') {
                     return target instanceof type;
                 }
             }
@@ -133,12 +199,10 @@ if (typeof module !== 'undefined' && module.exports) {
             if (target) {
                 if (target.__may__) {
                     return target.__may__(name);
-                }
-                else {
+                } else {
                     return target.hasOwnProperty('on' + name);
                 }
-            }
-            else {
+            } else {
                 return false;
             }
         },
@@ -146,12 +210,10 @@ if (typeof module !== 'undefined' && module.exports) {
             if (target) {
                 if (target.__can__) {
                     return target.__can__(name);
-                }
-                else {
+                } else {
                     return typeof target[name] === 'function';
                 }
-            }
-            else {
+            } else {
                 return false;
             }
         },
@@ -159,12 +221,10 @@ if (typeof module !== 'undefined' && module.exports) {
             if (target) {
                 if (target.__has__) {
                     return target.__has__(name);
-                }
-                else {
+                } else {
                     return target.hasOwnProperty(name);
                 }
-            }
-            else {
+            } else {
                 return false;
             }
         },
@@ -172,8 +232,7 @@ if (typeof module !== 'undefined' && module.exports) {
             if (target) {
                 if (target.__get__) {
                     return target.__get__(name);
-                }
-                else {
+                } else {
                     return target[name];
                 }
             }
@@ -181,9 +240,8 @@ if (typeof module !== 'undefined' && module.exports) {
         set: function (target, name, value) {
             if (target) {
                 if (target.__set__) {
-                    target.__set__(name);
-                }
-                else {
+                    target.__set__(name, value);
+                } else {
                     target[name] = value;
                 }
             }
@@ -192,14 +250,14 @@ if (typeof module !== 'undefined' && module.exports) {
             if (target) {
                 if (target.__gets__) {
                     return target.__gets__();
-                }
-                else {
+                } else {
                     var result = {};
                     for (var key in target) {
                         if (target.hasOwnProperty(key)) {
                             result[key] = target[key];
                         }
                     }
+
                     return result;
                 }
             }
@@ -208,8 +266,7 @@ if (typeof module !== 'undefined' && module.exports) {
             if (target && dict) {
                 if (target.__sets__) {
                     target.__sets__(dict);
-                }
-                else {
+                } else {
                     for (var key in dict) {
                         if (dict.hasOwnProperty(key)) {
                             target[key] = dict[key];
@@ -217,82 +274,19 @@ if (typeof module !== 'undefined' && module.exports) {
                     }
                 }
             }
-        },
-        path: function (target, path, value) {
-            var result = target;
-            if (path) {
-                var tokens = path.split('.'), token,
-                    i = 0, length = tokens.length;
-
-                if (arguments.length < 3) {
-                    for (; result && i < length; i++) {
-                        token = tokens[i];
-                        if (result.__get__) {
-                            result = result.__get__(token);
-                        }
-                        else {
-                            result = result[token];
-                        }
-                    }
-                }
-                else {
-                    length -= 1;
-                    for (; result && i < length; i++) {
-                        token = tokens[i];
-                        if (result.__get__) {
-                            result = result.__get__(token);
-                        }
-                        else {
-                            result = result[token] = result[token] || {};
-                        }
-                    }
-
-                    token = tokens[i];
-                    if (result) {
-                        if (result.__set__) {
-                            result.__set__(token, value);
-                        }
-                        else {
-                            result[token] = value;
-                        }
-
-                        result = value;
-                    }
-                }
-            }
-
-            return result;
-        },
-        invoke: function (target, path, args) {
-            if (target && path) {
-                var index = path.lastIndexOf('.');
-                var context, method;
-
-                if (index > 0) {
-                    context = zn.path(target, path.substring(0, index));
-                    if (context) {
-                        method = context[path.substring(index + 1)];
-                    }
-                }
-                else {
-                    context = target;
-                    method = target[path];
-                }
-
-                if (method) {
-                    method.apply(context, args);
-                }
-            }
         }
     };
 
-    __builtin_functions__.extend(zn, __builtin_functions__);
+    __builtin__.extend(zn, __builtin__);
 
 })(zn);
 /**
  * Fix Javascript Object Functions
  */
 (function (zn){
+
+    var __slice = Array.prototype.slice,
+        __hasOwnProperty = Object.prototype.hasOwnProperty;
 
     var __fixArray__ = {
         isArray: function (target){
@@ -301,7 +295,7 @@ if (typeof module !== 'undefined' && module.exports) {
              * 1, return Object.prototype.toString.call(target) === '[object Array]';
              * 2, return target&&target.constructor === Array;
              * */
-            return Object.prototype.toString.call(target) === '[object Array]';
+            return target && zn.toString(target) === '[object Array]' && target.constructor === Array;
         }
     };
 
@@ -338,7 +332,7 @@ if (typeof module !== 'undefined' && module.exports) {
         bind: function (context){
             var _self = this;
             return function (){
-                return _self.apply(context, Array.prototype.slice.call(arguments));
+                return _self.apply(context, __slice.call(arguments, 1));
             };
         }
     };
@@ -350,11 +344,11 @@ if (typeof module !== 'undefined' && module.exports) {
             }
             var _keys = [], _property;
             for (_property in obj){
-                if(Object.prototype.hasOwnProperty.call(obj,_property)){
+                if(__hasOwnProperty.call(obj, _property)){
                     _keys.push(_property);
                 }
             }
-            console.log(this);
+
             return _keys;
         },
         create: (function (){
@@ -394,7 +388,6 @@ if (typeof module !== 'undefined' && module.exports) {
         Object.defineProperty = function (obj, propertyName, descriptor) {
             return __fixObject__.defineProperty(obj, propertyName, descriptor);
         };
-
     }
 
 })(zn);
