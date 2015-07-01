@@ -1,9 +1,9 @@
 /**
- * Class Mechanism
+ * Define Class
  */
 (function (zn) {
 
-    var MEMBER_PREFIX = '@',
+    var CLASS_MEMBER_PREFIX = '@',
         id = 1,
         GLOBAL = zn.global;
 
@@ -15,28 +15,28 @@
      * @returns {boolean}
      */
     function defineEvent(target, name, meta) {
-        var key = MEMBER_PREFIX + name;
-        var overridden = key in target;
+        var _key = CLASS_MEMBER_PREFIX + name;
+        var _exist = _key in target;
 
-        target[key] = {
+        target[_key] = {
             name: name,
             type: 'event',
             meta: meta,
             descriptor: Object.defineProperty(target, 'on' + name.toLowerCase(), {
                 get: function () {
-                    var listeners = this.__handler__[name];
-                    if (listeners) {
-                        return listeners[0].handler;
+                    var _listeners = this.__handlers__[name];
+                    if (_listeners) {
+                        return _listeners[0].handler;
                     }
                     else {
                         return null;
                     }
                 },
                 set: function (value) {
-                    var map = this.__handler__;
-                    var listeners = map[name] = map[name] || [];
+                    var _handlers = this.__handlers__;
+                    var _listeners = _handlers[name] = _handlers[name] || [];
 
-                    listeners[0] = {
+                    _listeners[0] = {
                         owner: this,
                         handler: value,
                         context: null
@@ -45,7 +45,7 @@
             })
         };
 
-        return overridden;
+        return _exist;
     }
 
     /**
@@ -56,62 +56,61 @@
      * @returns {boolean}
      */
     function defineProperty(target, name, meta) {
-        var key = MEMBER_PREFIX + name;
-        var overridden = key in target;
-        var getter, setter;
+        var _key = CLASS_MEMBER_PREFIX + name;
+        var _exist = _key in target;
+        var _getter, _setter;
 
         if ('value' in meta) {
-            var value = meta.value;
-            var field = '_' + name;
-            getter = function () {
-                if (field in this) {
-                    return this[field];
+            var _value = meta.value;
+            var _field = '_' + name;
+            _getter = function () {
+                if (_field in this) {
+                    return this[_field];
                 }
                 else {
-                    return zn.is(value, 'function') ? value.call(this) : value;
+                    return zn.is(_value, 'function') ? _value.call(this) : _value;
                 }
             };
-            setter = meta.readonly ?
+            _setter = meta.readonly ?
                 function (value, options) {
                     if (options && options.force) {
-                        this[field] = value;
+                        this[_field] = value;
                     }
                     else {
                         return false;
                     }
                 } :
                 function (value) {
-                    this[field] = value;
+                    this[_field] = value;
                 };
-        }
-        else {
-            getter = meta.get || function () {
+        } else {
+            _getter = meta.get || function () {
                 return undefined;
             };
-            setter = meta.set || function () {
+            _setter = meta.set || function () {
                 return false;
             };
         }
 
-        if (overridden) {
-            getter.__super__ = target[key].getter;
-            setter.__super__ = target[key].setter;
+        if (_exist) {
+            _getter.__super__ = target[_key].getter;
+            _setter.__super__ = target[_key].setter;
         }
 
-        target[key] = {
+        target[_key] = {
             name: name,
             type: 'property',
             meta: meta,
-            getter: getter,
-            setter: setter,
+            getter: _getter,
+            setter: _setter,
             descriptor: Object.defineProperty(target, name, {
-                get: getter,
-                set: setter,
+                get: _getter,
+                set: _setter,
                 configurable: true
             })
         };
 
-        return overridden;
+        return _exist;
     }
 
     /**
@@ -122,10 +121,10 @@
      * @returns {boolean}
      */
     function defineMethod(target, name, meta) {
-        var key = MEMBER_PREFIX + name;
-        var overridden = key in target;
+        var _key = CLASS_MEMBER_PREFIX + name;
+        var _exist = _key in target;
 
-        target[key] = {
+        target[_key] = {
             name: name,
             type: 'method',
             meta: meta
@@ -137,17 +136,20 @@
 
         target[name] = meta.value;
 
-        return overridden;
+        return _exist;
     }
 
     var sharedMethods = {
+        toString: function (){
+            return '[Class ' + (this.__name__ || 'Anonymous') + ' ]';
+        },
         /**
          * Get specified member.
          * @param name
          * @returns {*}
          */
         member: function (name) {
-            return this[MEMBER_PREFIX + name];
+            return this[CLASS_MEMBER_PREFIX + name];
         },
         /**
          * Check whether current object has specified event.
@@ -156,8 +158,8 @@
          * @returns {Boolean}
          */
         may: function (name) {
-            var member = this.member(name);
-            return member && member.type == 'event';
+            var _member = this.member(name);
+            return _member && _member.type == 'event';
         },
         /**
          * Check whether current object has specified property.
@@ -166,8 +168,8 @@
          * @returns {Boolean}
          */
         has: function (name) {
-            var member = this.member(name);
-            return member && member.type == 'property';
+            var _member = this.member(name);
+            return _member && _member.type == 'property';
         },
         /**
          * Check whether current object has specified method.
@@ -176,8 +178,8 @@
          * @returns {Boolean}
          */
         can: function (name) {
-            var member = this.member(name);
-            return member && member.type == 'method';
+            var _member = this.member(name);
+            return _member && _member.type == 'method';
         },
         /**
          * Get specified property value.
@@ -187,8 +189,12 @@
          * @returns {*}
          */
         get: function (name, options) {
-            var member = this.member(name);
-            return member && member.getter.call(this, options);
+            var _member = this.member(name);
+            if(_member && _member.getter){
+                return _member.getter.call(this, options);
+            }
+
+            return undefined;
         },
         /**
          * Set specified property value.
@@ -198,9 +204,9 @@
          * @param [options] {Any}
          */
         set: function (name, value, options) {
-            var member = this.member(name);
-            if (member && member.setter) {
-                member.setter.call(this, value, options);
+            var _member = this.member(name);
+            if (_member && _member.setter) {
+                _member.setter.call(this, value, options);
             }
 
             return this;
@@ -212,12 +218,12 @@
          * @param [options] {Any}
          */
         gets: function (options) {
-            var result = {};
+            var _values = {};
             zn.each(this.constructor.__properties__, function (name) {
-                result[name] = this.get(name, options);
+                _values[name] = this.get(name, options);
             }, this);
 
-            return result;
+            return _values;
         },
         /**
          * Set a bunch of properties.
@@ -225,11 +231,11 @@
          * @param dict {Object}
          * @param [options] {Any}
          */
-        sets: function (dict, options) {
-            if (dict) {
-                for (var name in dict) {
-                    if (dict.hasOwnProperty(name)) {
-                        this.set(name, dict[name], options);
+        sets: function (values, options) {
+            if (values) {
+                for (var _name in values) {
+                    if (values.hasOwnProperty(_name)) {
+                        this.set(_name, values[_name], options);
                     }
                 }
             }
@@ -245,10 +251,10 @@
          */
         upon: function (name, handler, options) {
             if (handler) {
-                var map = this.__handler__;
-                var listeners = map[name] = map[name] || [];
+                var _handlers = this.__handlers__;
+                var _listeners = _handlers[name] = _handlers[name] || [];
 
-                listeners[0] = zn.extend({
+                _listeners[0] = zn.extend({
                     owner: this,
                     handler: handler
                 }, options);
@@ -264,13 +270,17 @@
          * @param [options] {Object}
          */
         on: function (name, handler, options) {
-            if (handler) {
-                var map = this.__handler__;
-                var listeners = map[name] = map[name] || [
-                    {owner: null, handler: null, context: null}
+            if (_handler) {
+                var _handlers = this.__handlers__;
+                var _listeners = _handlers[name] = _handlers[name] || [
+                    {
+                        owner: null,
+                        handler: null,
+                        context: null
+                    }
                 ];
 
-                listeners.push(zn.extend({
+                _listeners.push(zn.extend({
                     owner: this,
                     handler: handler
                 }, options));
@@ -286,19 +296,19 @@
          * @param [options] {Object}
          */
         off: function (name, handler, options) {
-            var listeners = this.__handler__[name], listener;
-            var context = options && options.context;
-            if (listeners) {
+            var _listeners = this.__handlers__[name]||[], _listener;
+            var _context = options && options.context;
+            if (_listeners) {
                 if (handler) {
-                    for (var i = listeners.length - 1; i >= 0; i--) {
-                        listener = listeners[i];
-                        if (listener.handler === handler && (!context || listener.context === context )) {
-                            listeners.splice(i, 1);
+                    for (var i = _listeners.length - 1; i >= 0; i--) {
+                        _listener = _listeners[i];
+                        if (_listener.handler === handler && (!_context || _listener.context === _context )) {
+                            _listeners.splice(i, 1);
                         }
                     }
                 }
                 else {
-                    listeners.length = 1;
+                    _listeners.length = 1;
                 }
             }
 
@@ -312,17 +322,23 @@
          * @param [options] {Object}
          */
         fire: function (name, data, options) {
-            var listeners = this.__handler__[name], listener;
-            if (listeners) {
-                for (var i = 0, length = listeners.length; i < length; i++) {
-                    listener = listeners[i];
-                    if (listener && listener.handler) {
-                        if (false === listener.handler.call(listener.context || listener.owner, listener.owner, data, options)) {
+            var _listeners = this.__handler__[name], _listener;
+            if (_listeners) {
+                for (var i = 0, length = _listeners.length; i < length; i++) {
+                    _listener = _listeners[i];
+                    if (_listener && _listener.handler) {
+                        if (false === _listener.handler.call(_listener.context || _listener.owner, _listener.owner, data, options)) {
                             return false;
                         }
                     }
                 }
             }
+        },
+        __is__: function (){
+
+        },
+        __clone__: function (){
+
         },
         __may__: function (name) {
             return this.may(name);
@@ -342,8 +358,8 @@
         __gets__: function () {
             return this.gets();
         },
-        __sets__: function (dict) {
-            this.sets(dict);
+        __sets__: function (values) {
+            this.sets(values);
         }
     };
 
@@ -419,7 +435,7 @@
          * @method dispose
          */
         dispose: function () {
-            this.__handler__ = {};
+            this.__handlers__ = {};
         },
         /**
          * Destroy current object.
@@ -433,9 +449,9 @@
          * @method super
          */
         super: function () {
-            var superMethod = this.super.caller.__super__;
-            if (superMethod) {
-                return superMethod.apply(this, arguments);
+            var _superMethod = this.super.caller.__super__;
+            if (_superMethod) {
+                return _superMethod.apply(this, arguments);
             }
         },
         /**
@@ -452,12 +468,11 @@
             if (type) {
                 if (this instanceof type) {
                     return true;
-                }
-                else {
-                    var mixins = this.constructor.__mixins__;
-                    for (var i = 0, len = mixins.length; i < len; i++) {
-                        var mixin = mixins[i];
-                        if (type === mixin) {
+                } else {
+                    var _mixins = this.constructor.__mixins__;
+                    for (var i = 0, _len = _mixins.length; i < _len; i++) {
+                        var _mixin = _mixins[i];
+                        if (type === _mixin) {
                             return true;
                         }
                     }
@@ -475,8 +490,7 @@
      * The default super class for all classes defined in znJS.
      * @private
      */
-    function __Object__() {
-    }
+    function __Object__() { }
 
     zn.extend(__Object__, sharedMethods, classMethods, {
         __id__: 0,
@@ -490,6 +504,148 @@
 
     zn.extend(__Object__.prototype, sharedMethods, instanceMethods);
 
+    var __classTookit__ = {
+        initArgs: function (){
+            var _args = arguments,
+                _argsLength = _args.length,
+                _args0 = _args[0],
+                _name, _super, _meta;
+
+            var CLASS_KEYS = {
+                'static': false,
+                statics: [],
+                partial: false,
+                abstract: false,
+                final: false,
+                mixins: [],
+                events: [],
+                properties: [],
+                methods: []
+            };
+
+            if (_argsLength === 3) {
+                _name = _args0;
+                _super = _args[1];
+                _meta = _args[2];
+
+                if (!zn.is(_super, 'function')) {
+                    throw new Error('Invalid _super class.');
+                }
+
+            } else if (_argsLength === 2) {
+                if (zn.is(_args0, 'string')) {
+                    _name = _args0;
+                    _super = null;
+                } else if (zn.is(arg0, 'function')) {
+                    _name = null;
+                    _super = _args0;
+                } else {
+                    throw new Error('Invalid _super class.');
+                }
+
+                _meta = _args[1];
+
+            } else if (_argsLength === 1) {
+                _name = null;
+                _super = null;
+                _meta = _args0;
+
+                if (!zn.is(_meta, 'object')) {
+                    throw new Error('The meta argument must be an object.');
+                }
+
+            } else {
+                throw new Error('Invalid arguments.');
+            }
+
+            _meta = zn.extend(_meta || {}, CLASS_KEYS);
+            _super = _super || __Object__;
+
+            return { name: _name, super: _super, meta: _meta };
+        },
+        initMeta: function (_Class, _args){
+            var _name = _args.name,
+                _super = _args.super,
+                _meta = _args.meta,
+                _prototype = _Class.prototype;
+
+            zn.extend(_Class, sharedMethods, classMethods, {
+                __id__: id++,
+                __name__: _name,
+                __super__: _super,
+                __partial__: _meta.partial,
+                __abstract__: _meta.abstract,
+                __static__: _meta.static,
+                __final__: _meta.final,
+                __statics__: zn.extend({}, _super.__statics__, _meta.statics),
+                __events__: _super.__events__.slice(0),
+                __properties__: _super.__properties__.slice(0),
+                __methods__: _super.__methods__.slice(0),
+                __mixins__: _super.__mixins__.concat(_meta.mixins),
+                __meta__: _meta
+            });
+
+            zn.extend(_Class, _Class.__statics__);
+
+            if (_meta.static) {
+                zn.each(_meta.events, function (item) {
+                    defineEvent(_Class, item, {});
+                });
+
+                zn.each(_meta.properties, function (value, key) {
+                    defineProperty(_Class, key, zn.is(value, 'object') ? value : { value: value });
+                });
+
+                zn.each(_meta.methods, function (value, key) {
+                    defineMethod(_Class, key, zn.is(value, 'function') ? { value: value } : value);
+                });
+
+                if (_meta.methods.init) {
+                    _meta.methods.init.call(_Class);
+                }
+
+            } else {
+                zn.each(_meta.mixins, function (mixin) {
+                    var _mixinPrototype = mixin.prototype;
+                    zn.each(mixin.__events__, function (name) {
+                        _Class.defineEvent(name, _mixinPrototype.member(name).meta);
+                    });
+
+                    zn.each(mixin.__properties__, function (name) {
+                        _Class.defineProperty(name, _mixinPrototype.member(name).meta);
+                    });
+
+                    zn.each(mixin.__methods__, function (name) {
+                        if (!sharedMethods[name] && !instanceMethods[name]) {
+                            _Class.defineMethod(name, _mixinPrototype.member(name).meta);
+                        }
+                    });
+                });
+
+                zn.each(_meta.events, function (item) {
+                    _Class.defineEvent(item, {});
+                });
+
+                zn.each(_meta.properties, function (value, key) {
+                    _Class.defineProperty(key, zn.is(value, 'object') ? value : { value: value });
+                });
+
+                zn.each(_meta.methods, function (value, key) {
+                    _Class.defineMethod(key, zn.is(value, 'function') ? { value: value } : value);
+                });
+            }
+
+            if (_prototype.__define__) {
+                _prototype.__define__.call(_Class);
+            }
+
+            if(_name){
+                zn.path(GLOBAL, _name, _Class);
+            }
+            return _Class;
+        }
+    };
+
     /**
      * Define a class
      * @method define
@@ -498,61 +654,12 @@
      * @param meta {Object}
      * @returns {Function}
      */
-    zn.class = function () {
-        var args = arguments;
-        var nArgs = args.length;
-        var arg0 = args[0];
-        var name, _super, meta;
-
-        if (nArgs === 3) {
-            name = arg0;
-            _super = args[1];
-            meta = args[2];
-
-            if (!zn.is(_super, 'function')) {
-                throw new Error('Invalid _super class.');
-            }
-        }
-        else if (nArgs === 2) {
-            if (zn.is(arg0, 'string')) {
-                name = arg0;
-                _super = null;
-            }
-            else if (zn.is(arg0, 'function')) {
-                name = null;
-                _super = arg0;
-            }
-            else {
-                throw new Error('Invalid _super class.');
-            }
-            meta = args[1];
-        }
-        else if (nArgs === 1) {
-            name = null;
-            _super = null;
-            meta = arg0;
-            if (!zn.is(meta, 'object')) {
-                throw new Error('The meta argument must be an object.');
-            }
-        }
-        else {
-            throw new Error('Invalid arguments.');
-        }
-
-        meta = meta || {};
-        _super = _super || __Object__;
-
-        var static = meta.static || false;
-        var partial = meta.partial || false;
-        var abstract = meta.abstract || false;
-        var final = meta.final || false;
-        var mixins = meta.mixins || [];
-        var statics = meta.statics || {};
-        var events = meta.events || [];
-        var props = meta.properties || {};
-        var methods = meta.methods || {};
-        var prototype;
-        var Class, SuperClass;
+    function define () {
+        var _args = __classTookit__.initArgs.apply(this, arguments);
+        var _name = _args.name,
+            _super = _args.super,
+            _meta = _args.meta;
+        var Class, _SuperClass, _prototype;
 
         if (_super.__static__) {
             throw new Error('Static class cannot be inherited.');
@@ -562,51 +669,49 @@
             throw new Error('Final class cannot be inherited.');
         }
 
-        if (name && partial) {
-            Class = zn.path(GLOBAL, name);
+        if (_name && _meta.partial) {
+            Class = zn.path(GLOBAL, _name);
         }
 
-        if (static) {
+        if (_meta.static) {
             if (Class) {
                 if (!Class.__static__) {
-                    throw new Error('Partial class "' + name + '" must be static.');
+                    throw new Error('Partial class "' + _name + '" must be static.');
                 }
-            }
-            else {
+            } else {
                 Class = function () {
                     throw new Error('Cannot instantiate static class.');
                 };
             }
 
-            prototype = Class.prototype;
-        }
-        else {
+            _prototype = Class.prototype;
+
+        } else {
             if (Class) {
                 if (Class.__static__) {
-                    throw new Error('Partial class "' + name + '" must not be static.');
+                    throw new Error('Partial class "' + _name + '" must not be static.');
                 }
 
                 if (Class.__super__ !== _super && Class.__super__ !== __Object__) {
-                    throw new Error('Partial class "' + name + '" must have consistent super class.');
+                    throw new Error('Partial class "' + _name + '" must have consistent super class.');
                 }
-            }
-            else {
-                Class = abstract ?
+
+            } else {
+                Class = _meta.abstract ?
                     function () {
                         throw new Error('Cannot instantiate abstract class.');
                     } :
                     function () {
-                        var mixins = Class.__mixins__;
+                        console.log(Object.keys(Class));
+                        var _mixins = Class.__mixins__;
                         this.__id__ = id++;
-                        this.__handler__ = {};
-
+                        this.__handlers__ = {};
                         this.__initializing__ = true;
 
-
-                        for (var i = 0, length = mixins.length; i < length; i++) {
-                            var ctor = mixins[i].prototype.__ctor__;
-                            if (ctor) {
-                                ctor.call(this);
+                        for (var i = 0, _len = _mixins.length; i < _len; i++) {
+                            var _ctor = _mixins[i].prototype.__ctor__;
+                            if (_ctor) {
+                                _ctor.call(this);
                             }
                         }
 
@@ -619,103 +724,29 @@
             }
 
             if (Class.__super__ !== _super) {
-                SuperClass = function () {
-                };
+                _SuperClass = function () { };
+                _SuperClass.prototype = _super.prototype;
+                _prototype = new _SuperClass();
+                _prototype.constructor = Class;
+                _prototype.__type__ = _name;
 
-                SuperClass.prototype = _super.prototype;
-                prototype = new SuperClass();
-                prototype.constructor = Class;
-                prototype.__type__ = name;
-
-                Class.prototype = prototype;
-            }
-            else {
-                prototype = Class.prototype;
+                Class.prototype = _prototype;
+            } else {
+                _prototype = Class.prototype;
             }
 
-            if (methods.init) {
-                prototype.__ctor__ = methods.init;
+            if (_meta.methods.init) {
+                _prototype.__ctor__ = _meta.methods.init;
             }
-        }
 
-        zn.extend(Class, sharedMethods, classMethods, {
-            __id__: id++,
-            __name__: name,
-            __super__: _super,
-            __partial__: partial,
-            __abstract__: abstract,
-            __static__: static,
-            __final__: final,
-            __statics__: zn.extend({}, _super.__statics__, statics),
-            __events__: _super.__events__.slice(0),
-            __properties__: _super.__properties__.slice(0),
-            __methods__: _super.__methods__.slice(0),
-            __mixins__: _super.__mixins__.concat(mixins),
-            __meta__: meta,
-            toString: function () {
-                return '[Class ' + (this.__name__ || 'Anonymous') + ']';
-            }
-        });
+        };
 
-        zn.extend(Class, Class.__statics__);
-
-        if (static) {
-            zn.each(events, function (item) {
-                defineEvent(Class, item, {});
-            });
-
-            zn.each(props, function (value, key) {
-                defineProperty(Class, key, zn.is(value, 'object') ? value : {value: value});
-            });
-
-            zn.each(methods, function (value, key) {
-                defineMethod(Class, key, zn.is(value, 'function') ? {value: value} : value);
-            });
-
-            if (methods.init) {
-                methods.init.call(Class);
-            }
-        }
-        else {
-            zn.each(mixins, function (mixin) {
-                var mixinPrototype = mixin.prototype;
-                zn.each(mixin.__events__, function (name) {
-                    Class.defineEvent(name, mixinPrototype.member(name).meta);
-                });
-
-                zn.each(mixin.__properties__, function (name) {
-                    Class.defineProperty(name, mixinPrototype.member(name).meta);
-                });
-
-                zn.each(mixin.__methods__, function (name) {
-                    if (!sharedMethods[name] && !instanceMethods[name]) {
-                        Class.defineMethod(name, mixinPrototype.member(name).meta);
-                    }
-                });
-            });
-
-            zn.each(events, function (item) {
-                Class.defineEvent(item, {});
-            });
-
-            zn.each(props, function (value, key) {
-                Class.defineProperty(key, zn.is(value, 'object') ? value : {value: value});
-            });
-
-            zn.each(methods, function (value, key) {
-                Class.defineMethod(key, zn.is(value, 'function') ? {value: value} : value);
-            });
-        }
-
-        if (prototype.__define__) {
-            prototype.__define__.call(Class);
-        }
-
-        if(name){
-            zn.path(GLOBAL, name, Class);
-        }
+        __classTookit__.initMeta(Class, _args);
 
         return Class;
     };
+
+    zn.class = define;
+
 
 })(zn);

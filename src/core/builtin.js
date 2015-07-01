@@ -9,9 +9,9 @@
             var _target = target||{};
             for (var i = 1, _len = arguments.length; i < _len; i++) {
                 var _fix = arguments[i];
-                for (var key in _fix) {
-                    if (_fix.hasOwnProperty(key) && typeof _target[key] !== 'function') {
-                        _target[key] = _fix[key];
+                for (var _key in _fix) {
+                    if (_fix.hasOwnProperty(_key) && typeof _target[_key] !== 'function') {
+                        _target[_key] = _fix[_key];
                     }
                 }
             }
@@ -22,9 +22,9 @@
             var _target = target||{};
             for (var i = 1, _len = arguments.length; i < _len; i++) {
                 var _args = arguments[i];
-                for (var key in _args) {
-                    if (_args.hasOwnProperty(key)) {
-                        _target[key] = _args[key];
+                for (var _key in _args) {
+                    if (_args.hasOwnProperty(_key)) {
+                        _target[_key] = _args[_key];
                     }
                 }
             }
@@ -35,9 +35,9 @@
             var _target = target||{};
             for(var i = 1, _len = arguments.length; i < _len; i++){
                 var _args = arguments[i];
-                for(var key in _args){
-                    if(_args.hasOwnProperty(key) && _target[key]===undefined){
-                        _target[key] = _args[key];
+                for(var _key in _args){
+                    if(_args.hasOwnProperty(_key) && _target[_key]===undefined){
+                        _target[_key] = _args[_key];
                     }
                 }
             }
@@ -129,9 +129,9 @@
                             callback.call(context, target[i], i);
                         }
                     } else {
-                        for (var key in target) {
-                            if (target.hasOwnProperty(key)) {
-                                callback.call(context, target[key], key);
+                        for (var _key in target) {
+                            if (target.hasOwnProperty(_key)) {
+                                callback.call(context, target[_key], _key);
                             }
                         }
                     }
@@ -239,25 +239,25 @@
                 if (target.__gets__) {
                     return target.__gets__();
                 } else {
-                    var result = {};
-                    for (var key in target) {
-                        if (target.hasOwnProperty(key)) {
-                            result[key] = target[key];
+                    var _values = {};
+                    for (var _key in target) {
+                        if (target.hasOwnProperty(_key)) {
+                            _values[_key] = target[_key];
                         }
                     }
 
-                    return result;
+                    return _values;
                 }
             }
         },
-        sets: function (target, dict) {
-            if (target && dict) {
+        sets: function (target, values) {
+            if (target && values) {
                 if (target.__sets__) {
-                    target.__sets__(dict);
+                    target.__sets__(values);
                 } else {
-                    for (var key in dict) {
-                        if (dict.hasOwnProperty(key)) {
-                            target[key] = dict[key];
+                    for (var _key in values) {
+                        if (values.hasOwnProperty(_key)) {
+                            target[_key] = values[_key];
                         }
                     }
                 }
