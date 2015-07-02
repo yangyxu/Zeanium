@@ -558,7 +558,7 @@
                 throw new Error('Invalid arguments.');
             }
 
-            _meta = zn.extend(_meta || {}, CLASS_KEYS);
+            _meta = zn.overwrite(_meta || {}, CLASS_KEYS);
             _super = _super || __Object__;
 
             return { name: _name, super: _super, meta: _meta };
@@ -566,8 +566,7 @@
         initMeta: function (_Class, _args){
             var _name = _args.name,
                 _super = _args.super,
-                _meta = _args.meta,
-                _prototype = _Class.prototype;
+                _meta = _args.meta;
 
             zn.extend(_Class, sharedMethods, classMethods, {
                 __id__: id++,
@@ -635,13 +634,6 @@
                 });
             }
 
-            if (_prototype.__define__) {
-                _prototype.__define__.call(_Class);
-            }
-
-            if(_name){
-                zn.path(GLOBAL, _name, _Class);
-            }
             return _Class;
         }
     };
@@ -659,7 +651,7 @@
         var _name = _args.name,
             _super = _args.super,
             _meta = _args.meta;
-        var Class, _SuperClass, _prototype;
+        var ZNClass, _SuperClass, _prototype;
 
         if (_super.__static__) {
             throw new Error('Static class cannot be inherited.');
@@ -670,40 +662,39 @@
         }
 
         if (_name && _meta.partial) {
-            Class = zn.path(GLOBAL, _name);
+            ZNClass = zn.path(GLOBAL, _name);
         }
 
         if (_meta.static) {
-            if (Class) {
-                if (!Class.__static__) {
+            if (ZNClass) {
+                if (!ZNClass.__static__) {
                     throw new Error('Partial class "' + _name + '" must be static.');
                 }
             } else {
-                Class = function () {
+                ZNClass = function () {
                     throw new Error('Cannot instantiate static class.');
                 };
             }
 
-            _prototype = Class.prototype;
+            _prototype = ZNClass.prototype;
 
         } else {
-            if (Class) {
-                if (Class.__static__) {
+            if (ZNClass) {
+                if (ZNClass.__static__) {
                     throw new Error('Partial class "' + _name + '" must not be static.');
                 }
 
-                if (Class.__super__ !== _super && Class.__super__ !== __Object__) {
+                if (ZNClass.__super__ !== _super && Class.__super__ !== __Object__) {
                     throw new Error('Partial class "' + _name + '" must have consistent super class.');
                 }
 
             } else {
-                Class = _meta.abstract ?
+                ZNClass = _meta.abstract ?
                     function () {
                         throw new Error('Cannot instantiate abstract class.');
                     } :
                     function () {
-                        console.log(Object.keys(Class));
-                        var _mixins = Class.__mixins__;
+                        var _mixins = ZNClass.__mixins__;
                         this.__id__ = id++;
                         this.__handlers__ = {};
                         this.__initializing__ = true;
@@ -723,16 +714,16 @@
                     };
             }
 
-            if (Class.__super__ !== _super) {
+            if (ZNClass.__super__ !== _super) {
                 _SuperClass = function () { };
                 _SuperClass.prototype = _super.prototype;
                 _prototype = new _SuperClass();
-                _prototype.constructor = Class;
+                _prototype.constructor = ZNClass;
                 _prototype.__type__ = _name;
 
-                Class.prototype = _prototype;
+                ZNClass.prototype = _prototype;
             } else {
-                _prototype = Class.prototype;
+                _prototype = ZNClass.prototype;
             }
 
             if (_meta.methods.init) {
@@ -741,9 +732,17 @@
 
         };
 
-        __classTookit__.initMeta(Class, _args);
+        __classTookit__.initMeta(ZNClass, _args);
 
-        return Class;
+        if (_prototype.__define__) {
+            _prototype.__define__.call(ZNClass);
+        }
+
+        if(_name){
+            zn.path(GLOBAL, _name, ZNClass);
+        }
+
+        return ZNClass;
     };
 
     zn.class = define;

@@ -57,10 +57,11 @@ var MyBaseClass = zn.class('test.MyBaseClass', {
     }
 });
 
-console.log('test');
+var _myClass = new MyBaseClass();
 
-console.log(MyBaseClass);
-console.log(new MyBaseClass());
+//console.log(MyBaseClass);
+console.log(_myClass);
+console.log(_myClass.prop1);
 
 /*
 test("define class", function () {
