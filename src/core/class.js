@@ -2,154 +2,195 @@
  * Define Class
  */
 (function (zn) {
+    /* *
+    * Class and Instance member named format splicity:
+    *
+    * 1: class member format: _member_,
+    *   you can get class member by this._member_, such as this._id_
+    * 2: instance member format: __member__,
+    *   you can get instance member by this.__member__, such as this.__id__
+    *
+    * */
 
-    var CLASS_MEMBER_PREFIX = '@',
-        id = 1,
-        GLOBAL = zn.global;
+    var GLOBAL = zn.global,
+        MEMBER_PREFIX = '@',
+        _id_ = 1,  /*class id var*/
+        __id__ = 1;  /*instance id var*/
 
-    /**
-     * Define an event for target
-     * @param target
-     * @param name
-     * @param meta
-     * @returns {boolean}
-     */
-    function defineEvent(target, name, meta) {
-        var _key = CLASS_MEMBER_PREFIX + name;
-        var _exist = _key in target;
+    var __define = {
+        /**
+         * Get target's constructor
+         * @param target
+         * @returns {*}
+         */
+        fixTargetCtor: function (target){
+            return ( target instanceof ZNObject ) ? target.constructor: target;
+        },
+        /**
+         * Get member key by name.
+         * @param name
+         * @returns {string}
+         */
+        fixTargetKey: function (name){
+            return MEMBER_PREFIX + name;
+        },
+        /**
+         * Define an event for target
+         * @param target
+         * @param name
+         * @param meta
+         * @returns {boolean}
+         */
+        defineEvent: function (target, name, meta){
+            var _ctor = __define.fixTargetCtor(target),
+                _key = __define.fixTargetKey(name),
+                _exist = _key in _ctor,
+                _descriptor = {};
+            if(!_exist){
+                _descriptor = Object.defineProperty(target, 'on' + name.toLowerCase(), {
+                    get: function () {
+                        var _listeners = this.__handlers__[name];
+                        if (_listeners) {
+                            return _listeners[0].handler;
+                        }
+                        else {
+                            return null;
+                        }
+                    },
+                    set: function (value) {
+                        var _handlers = this.__handlers__;
+                        var _listeners = _handlers[name] = _handlers[name] || [];
 
-        target[_key] = {
-            name: name,
-            type: 'event',
-            meta: meta,
-            descriptor: Object.defineProperty(target, 'on' + name.toLowerCase(), {
-                get: function () {
-                    var _listeners = this.__handlers__[name];
-                    if (_listeners) {
-                        return _listeners[0].handler;
+                        _listeners[0] = {
+                            owner: this,
+                            handler: value,
+                            context: null
+                        };
                     }
-                    else {
-                        return null;
-                    }
-                },
-                set: function (value) {
-                    var _handlers = this.__handlers__;
-                    var _listeners = _handlers[name] = _handlers[name] || [];
-
-                    _listeners[0] = {
-                        owner: this,
-                        handler: value,
-                        context: null
-                    };
-                }
-            })
-        };
-
-        return _exist;
-    }
-
-    /**
-     * Define a property for target
-     * @param target
-     * @param name
-     * @param meta
-     * @returns {boolean}
-     */
-    function defineProperty(target, name, meta) {
-        var _key = CLASS_MEMBER_PREFIX + name;
-        var _exist = _key in target;
-        var _getter, _setter;
-
-        if ('value' in meta) {
-            var _value = meta.value;
-            var _field = '_' + name;
-            _getter = function () {
-                if (_field in this) {
-                    return this[_field];
-                }
-                else {
-                    return zn.is(_value, 'function') ? _value.call(this) : _value;
-                }
+                });
+            }
+            _ctor[_key] = {
+                name: name,
+                type: 'event',
+                meta: meta,
+                descriptor: _descriptor
             };
-            _setter = meta.readonly ?
-                function (value, options) {
-                    if (options && options.force) {
-                        this[_field] = value;
+
+            return _exist;
+        },
+        /**
+         * Define a property for target
+         * @param target
+         * @param name
+         * @param meta
+         * @returns {boolean}
+         */
+        defineProperty: function (target, name, meta){
+            var _ctor = __define.fixTargetCtor(target),
+                _key = __define.fixTargetKey(name),
+                _exist = _key in _ctor,
+                _descriptor = {};
+            var _getter, _setter;
+
+            if ('value' in meta) {
+                var _value = meta.value;
+                var _field = '_' + name;
+                _getter = function () {
+                    if (_field in this) {
+                        return this[_field];
                     }
                     else {
-                        return false;
+                        return zn.is(_value, 'function') ? _value.call(this) : _value;
                     }
-                } :
-                function (value) {
-                    this[_field] = value;
                 };
-        } else {
-            _getter = meta.get || function () {
-                return undefined;
+                _setter = meta.readonly ?
+                    function (value, options) {
+                        if (options && options.force) {
+                            this[_field] = value;
+                        }
+                        else {
+                            return false;
+                        }
+                    } :
+                    function (value) {
+                        this[_field] = value;
+                    };
+            } else {
+                _getter = meta.get || function () {
+                    return undefined;
+                };
+                _setter = meta.set || function () {
+                    return false;
+                };
+            }
+
+            if (_exist) {
+                _getter.__super__ = target[_key].getter;
+                _setter.__super__ = target[_key].setter;
+            }
+
+            if(!_exist){
+                _descriptor = Object.defineProperty(target, name, {
+                    get: _getter,
+                    set: _setter,
+                    configurable: true
+                });
+            }
+
+            _ctor[_key] = {
+                name: name,
+                type: 'property',
+                meta: meta,
+                getter: _getter,
+                setter: _setter,
+                descriptor: _descriptor
             };
-            _setter = meta.set || function () {
-                return false;
+
+            return _exist;
+        },
+        /**
+         * Define a method for target
+         * @param target
+         * @param name
+         * @param meta
+         * @returns {boolean}
+         */
+        defineMethod: function (target, name, meta){
+            var _ctor = __define.fixTargetCtor(target),
+                _key = __define.fixTargetKey(name),
+                _exist = _key in _ctor;
+
+            _ctor[_key] = {
+                name: name,
+                type: 'method',
+                meta: meta
             };
+
+            if (name in target) {
+                meta.value.__super__ = target[name];
+            }
+
+            target[name] = meta.value;
+
+            return _exist;
         }
-
-        if (_exist) {
-            _getter.__super__ = target[_key].getter;
-            _setter.__super__ = target[_key].setter;
-        }
-
-        target[_key] = {
-            name: name,
-            type: 'property',
-            meta: meta,
-            getter: _getter,
-            setter: _setter,
-            descriptor: Object.defineProperty(target, name, {
-                get: _getter,
-                set: _setter,
-                configurable: true
-            })
-        };
-
-        return _exist;
-    }
-
-    /**
-     * Define a method for target
-     * @param target
-     * @param name
-     * @param meta
-     * @returns {boolean}
-     */
-    function defineMethod(target, name, meta) {
-        var _key = CLASS_MEMBER_PREFIX + name;
-        var _exist = _key in target;
-
-        target[_key] = {
-            name: name,
-            type: 'method',
-            meta: meta
-        };
-
-        if (name in target) {
-            meta.value.__super__ = target[name];
-        }
-
-        target[name] = meta.value;
-
-        return _exist;
-    }
+    };
 
     var sharedMethods = {
-        toString: function (){
-            return '[Class ' + (this.__name__ || 'Anonymous') + ' ]';
-        },
         /**
          * Get specified member.
          * @param name
          * @returns {*}
          */
-        member: function (name) {
-            return this[CLASS_MEMBER_PREFIX + name];
+        member: function (name, target) {
+            var _ctor = __define.fixTargetCtor(target||this),
+                _member = _ctor[__define.fixTargetKey(name)];
+
+            if(!_member&&_ctor!==ZNObject){
+                return this.member(name, _ctor._super_);
+            }
+
+            return _member;
         },
         /**
          * Check whether current object has specified event.
@@ -218,8 +259,9 @@
          * @param [options] {Any}
          */
         gets: function (options) {
-            var _values = {};
-            zn.each(this.constructor.__properties__, function (name) {
+            var _values = {},
+                _properties = __define.fixTargetCtor(this)._properties_;
+            zn.each(_properties, function (name) {
                 _values[name] = this.get(name, options);
             }, this);
 
@@ -241,6 +283,123 @@
             }
 
             return this;
+        },
+        each: function (callback, context){
+            var _properties = __define.fixTargetCtor(this)._properties_;
+            for(var i= 0, _len = _properties.length; i<_len; i++){
+                var _property = _properties[i];
+                var _callback = callback.call(context, _property, i, this.member(_property), this.get(_property));
+                if(_callback === false){
+                    return false;
+                }
+                if(_callback === -1){
+                    continue;
+                }
+            }
+
+            return this;
+        },
+        __may__: function (name) {
+            return this.may(name);
+        },
+        __has__: function (name) {
+            return this.has(name);
+        },
+        __can__: function (name) {
+            return this.can(name);
+        },
+        __get__: function (name) {
+            return this.get(name);
+        },
+        __gets__: function () {
+            return this.gets();
+        },
+        __set__: function (name, value) {
+            this.set(name, value);
+        },
+        __sets__: function (values) {
+            this.sets(values);
+        },
+        __each__: function (callback, context){
+            return this.each(callback, context);
+        }
+    };
+
+    var classMethods = {
+        toString: function (){
+            return '{ ClassName: ' + (this._name_ || 'Anonymous') + ', ClassID: ' + this._id_ + ' }';
+        },
+        /**
+         * Get the meta data of the class.
+         * @param name
+         * @returns {*}
+         */
+        getMeta: function (name) {
+            return name ? this._meta_[name]: this._meta_;
+        },
+        /**
+         * Get the meta data of the class.
+         * @param name
+         * @param value
+         * @returns {*}
+         */
+        setMeta: function (name, value) {
+            return this._meta_[name] = value, this;
+        },
+        /**
+         * Define an event.
+         * @method defineEvent
+         * @static
+         * @param name {String}
+         * @param [meta] {Object}
+         * @param [target] {Object}
+         */
+        defineEvent: function (name, meta, target) {
+            if (!__define.defineEvent(target || this.prototype, name, meta)) {
+                this._events_.push(name);
+            }
+
+            return this;
+        },
+        /**
+         * Define a property.
+         * @method defineProperty
+         * @static
+         * @param name {String}
+         * @param [meta] {Object}
+         * @param [target] {Object}
+         */
+        defineProperty: function (name, meta, target) {
+            if (!__define.defineProperty(target || this.prototype, name, meta)) {
+                this._properties_.push(name);
+            }
+
+            return this;
+        },
+        /**
+         * Define a method.
+         * @method defineMethod
+         * @static
+         * @param name {String}
+         * @param meta {Object}
+         * @param [target] {Object}
+         */
+        defineMethod: function (name, meta, target) {
+            if (!__define.defineMethod(target || this.prototype, name, meta)) {
+                this._methods_.push(name);
+            }
+
+            return this;
+        }
+    };
+
+    var instanceMethods = {
+        /**
+         * Instance Object to string value.
+         * @returns {string}
+         */
+        toString: function (){
+            return '{ ClassName: ' + (this.__name__ || 'Anonymous') + ', InstanceID: ' + this.__id__ + ' }';
         },
         /**
          * Add a single event handler.
@@ -270,7 +429,7 @@
          * @param [options] {Object}
          */
         on: function (name, handler, options) {
-            if (_handler) {
+            if (handler) {
                 var _handlers = this.__handlers__;
                 var _listeners = _handlers[name] = _handlers[name] || [
                     {
@@ -298,18 +457,22 @@
         off: function (name, handler, options) {
             var _listeners = this.__handlers__[name]||[], _listener;
             var _context = options && options.context;
-            if (_listeners) {
-                if (handler) {
-                    for (var i = _listeners.length - 1; i >= 0; i--) {
-                        _listener = _listeners[i];
-                        if (_listener.handler === handler && (!_context || _listener.context === _context )) {
-                            _listeners.splice(i, 1);
-                        }
+            if (handler) {
+                for (var i = _listeners.length - 1; i >= 0; i--) {
+                    _listener = _listeners[i];
+                    if (_listener.handler === handler && (!_context || _listener.context === _context )) {
+                        this.__handlers__[name].splice(i, 1);
                     }
                 }
-                else {
-                    _listeners.length = 1;
-                }
+            }
+            else {
+                this.__handlers__[name] = [
+                    {
+                        owner: null,
+                        handler: null,
+                        context: null
+                    }
+                ];
             }
 
             return this;
@@ -322,7 +485,7 @@
          * @param [options] {Object}
          */
         fire: function (name, data, options) {
-            var _listeners = this.__handler__[name], _listener;
+            var _listeners = this.__handlers__[name], _listener;
             if (_listeners) {
                 for (var i = 0, length = _listeners.length; i < length; i++) {
                     _listener = _listeners[i];
@@ -333,116 +496,22 @@
                     }
                 }
             }
-        },
-        __is__: function (){
-
-        },
-        __clone__: function (){
-
-        },
-        __may__: function (name) {
-            return this.may(name);
-        },
-        __can__: function (name) {
-            return this.can(name);
-        },
-        __has__: function (name) {
-            return this.has(name);
-        },
-        __get__: function (name) {
-            return this.get(name);
-        },
-        __set__: function (name, value) {
-            this.set(name, value);
-        },
-        __gets__: function () {
-            return this.gets();
-        },
-        __sets__: function (values) {
-            this.sets(values);
-        }
-    };
-
-    var classMethods = {
-        /**
-         * Get the meta data of the class.
-         * @param name
-         * @returns {*}
-         */
-        getMeta: function (name) {
-            return this.__meta__[name];
-        },
-        /**
-         * Get the meta data of the class.
-         * @param name
-         * @param value
-         * @returns {*}
-         */
-        setMeta: function (name, value) {
-            this.__meta__[name] = value;
-            return this;
-        },
-        /**
-         * Define an event.
-         * @method defineEvent
-         * @static
-         * @param name {String}
-         * @param [meta] {Object}
-         * @param [target] {Object}
-         */
-        defineEvent: function (name, meta, target) {
-            if (!defineEvent(target || this.prototype, name, meta)) {
-                this.__events__.push(name);
-            }
 
             return this;
         },
-        /**
-         * Define a property.
-         * @method defineProperty
-         * @static
-         * @param name {String}
-         * @param [meta] {Object}
-         * @param [target] {Object}
-         */
-        defineProperty: function (name, meta, target) {
-            if (!defineProperty(target || this.prototype, name, meta)) {
-                this.__properties__.push(name);
-            }
-
-            return this;
-        },
-        /**
-         * Define a method.
-         * @method defineMethod
-         * @static
-         * @param name {String}
-         * @param meta {Object}
-         * @param [target] {Object}
-         */
-        defineMethod: function (name, meta, target) {
-            if (!defineMethod(target || this.prototype, name, meta)) {
-                this.__methods__.push(name);
-            }
-
-            return this;
-        }
-    };
-
-    var instanceMethods = {
         /**
          * Dispose current object.
          * @method dispose
          */
         dispose: function () {
-            this.__handlers__ = {};
+            return this.__handlers__ = {}, this;
         },
         /**
          * Destroy current object.
          * @method destroy
          */
         destroy: function () {
-            this.dispose();
+            return this.dispose();
         },
         /**
          * Call overridden method from super class
@@ -469,7 +538,7 @@
                 if (this instanceof type) {
                     return true;
                 } else {
-                    var _mixins = this.constructor.__mixins__;
+                    var _mixins = this.constructor._mixins_;
                     for (var i = 0, _len = _mixins.length; i < _len; i++) {
                         var _mixin = _mixins[i];
                         if (type === _mixin) {
@@ -483,6 +552,9 @@
         },
         __is__: function (type) {
             return this.is(type);
+        },
+        __clone__: function (){
+
         }
     };
 
@@ -490,22 +562,23 @@
      * The default super class for all classes defined in znJS.
      * @private
      */
-    function __Object__() { }
+    function ZNObject() { }
 
-    zn.extend(__Object__, sharedMethods, classMethods, {
-        __id__: 0,
-        __statics__: {},
-        __events__: [],
-        __properties__: [],
-        __methods__: [],
-        __mixins__: [],
-        __meta__: {}
+    zn.extend(ZNObject, sharedMethods, classMethods, {
+        _id_: 0,
+        _name_: 'ZNObject',
+        _statics_: {},
+        _events_: [],
+        _properties_: [],
+        _methods_: [],
+        _mixins_: [],
+        _meta_: {}
     });
 
-    zn.extend(__Object__.prototype, sharedMethods, instanceMethods);
+    zn.extend(ZNObject.prototype, sharedMethods, instanceMethods);
 
-    var __classTookit__ = {
-        initArgs: function (){
+    var __class = {
+        _arguments: function (){
             var _args = arguments,
                 _argsLength = _args.length,
                 _args0 = _args[0],
@@ -558,71 +631,72 @@
                 throw new Error('Invalid arguments.');
             }
 
+            _name = _name || '';
             _meta = zn.overwrite(_meta || {}, CLASS_KEYS);
-            _super = _super || __Object__;
+            _super = _super || ZNObject;
 
             return { name: _name, super: _super, meta: _meta };
         },
-        initMeta: function (_Class, _args){
+        _meta: function (_Class, _args){
             var _name = _args.name,
                 _super = _args.super,
                 _meta = _args.meta;
 
             zn.extend(_Class, sharedMethods, classMethods, {
-                __id__: id++,
-                __name__: _name,
-                __super__: _super,
-                __partial__: _meta.partial,
-                __abstract__: _meta.abstract,
-                __static__: _meta.static,
-                __final__: _meta.final,
-                __statics__: zn.extend({}, _super.__statics__, _meta.statics),
-                __events__: _super.__events__.slice(0),
-                __properties__: _super.__properties__.slice(0),
-                __methods__: _super.__methods__.slice(0),
-                __mixins__: _super.__mixins__.concat(_meta.mixins),
-                __meta__: _meta
+                _id_: _id_++,
+                _name_: _name,
+                _super_: _super,
+                _partial_: _meta.partial,
+                _abstract_: _meta.abstract,
+                _static_: _meta.static,
+                _final_: _meta.final,
+                _statics_: zn.extend({}, _super._statics_, _meta.statics),
+                _events_: _super._events_.slice(0),
+                _properties_: _super._properties_.slice(0),
+                _methods_: _super._methods_.slice(0),
+                _mixins_: _super._mixins_.concat(_meta.mixins),
+                _meta_: _meta
             });
 
-            zn.extend(_Class, _Class.__statics__);
+
+            zn.extend(_Class, _Class._statics_);
 
             if (_meta.static) {
-                zn.each(_meta.events, function (item) {
-                    defineEvent(_Class, item, {});
+                zn.each(_meta.events, function (event) {
+                    _Class.defineEvent(event, {}, _Class);
                 });
 
                 zn.each(_meta.properties, function (value, key) {
-                    defineProperty(_Class, key, zn.is(value, 'object') ? value : { value: value });
+                    _Class.defineProperty(key, zn.is(value, 'object') ? value : { value: value }, _Class);
                 });
 
                 zn.each(_meta.methods, function (value, key) {
-                    defineMethod(_Class, key, zn.is(value, 'function') ? { value: value } : value);
+                    _Class.defineMethod(key, zn.is(value, 'function') ? { value: value } : value, _Class);
                 });
 
                 if (_meta.methods.init) {
-                    _meta.methods.init.call(_Class);
+                    _meta.methods.init.call(_Class, _Class);
                 }
-
             } else {
                 zn.each(_meta.mixins, function (mixin) {
                     var _mixinPrototype = mixin.prototype;
-                    zn.each(mixin.__events__, function (name) {
+                    zn.each(mixin._events_, function (name) {
                         _Class.defineEvent(name, _mixinPrototype.member(name).meta);
                     });
 
-                    zn.each(mixin.__properties__, function (name) {
+                    zn.each(mixin._properties_, function (name) {
                         _Class.defineProperty(name, _mixinPrototype.member(name).meta);
                     });
 
-                    zn.each(mixin.__methods__, function (name) {
+                    zn.each(mixin._methods_, function (name) {
                         if (!sharedMethods[name] && !instanceMethods[name]) {
                             _Class.defineMethod(name, _mixinPrototype.member(name).meta);
                         }
                     });
                 });
 
-                zn.each(_meta.events, function (item) {
-                    _Class.defineEvent(item, {});
+                zn.each(_meta.events, function (event) {
+                    _Class.defineEvent(event, {});
                 });
 
                 zn.each(_meta.properties, function (value, key) {
@@ -647,17 +721,17 @@
      * @returns {Function}
      */
     function define () {
-        var _args = __classTookit__.initArgs.apply(this, arguments);
+        var _args = __class._arguments.apply(this, arguments);
         var _name = _args.name,
             _super = _args.super,
             _meta = _args.meta;
         var ZNClass, _SuperClass, _prototype;
 
-        if (_super.__static__) {
+        if (_super._static_) {
             throw new Error('Static class cannot be inherited.');
         }
 
-        if (_super.__final__) {
+        if (_super._final_) {
             throw new Error('Final class cannot be inherited.');
         }
 
@@ -667,7 +741,7 @@
 
         if (_meta.static) {
             if (ZNClass) {
-                if (!ZNClass.__static__) {
+                if (!ZNClass._static_) {
                     throw new Error('Partial class "' + _name + '" must be static.');
                 }
             } else {
@@ -677,14 +751,13 @@
             }
 
             _prototype = ZNClass.prototype;
-
         } else {
             if (ZNClass) {
-                if (ZNClass.__static__) {
+                if (ZNClass._static_) {
                     throw new Error('Partial class "' + _name + '" must not be static.');
                 }
 
-                if (ZNClass.__super__ !== _super && Class.__super__ !== __Object__) {
+                if (ZNClass._super_ !== _super && Class._super_ !== ZNObject) {
                     throw new Error('Partial class "' + _name + '" must have consistent super class.');
                 }
 
@@ -694,10 +767,12 @@
                         throw new Error('Cannot instantiate abstract class.');
                     } :
                     function () {
-                        var _mixins = ZNClass.__mixins__;
-                        this.__id__ = id++;
+
+                        var _mixins = ZNClass._mixins_||[];
+                        this.__id__ = __id__++;
                         this.__handlers__ = {};
                         this.__initializing__ = true;
+
 
                         for (var i = 0, _len = _mixins.length; i < _len; i++) {
                             var _ctor = _mixins[i].prototype.__ctor__;
@@ -714,12 +789,12 @@
                     };
             }
 
-            if (ZNClass.__super__ !== _super) {
+            if (ZNClass._super_ !== _super) {
                 _SuperClass = function () { };
                 _SuperClass.prototype = _super.prototype;
                 _prototype = new _SuperClass();
                 _prototype.constructor = ZNClass;
-                _prototype.__type__ = _name;
+                _prototype.__type__ = _name || 'Anonymous';
 
                 ZNClass.prototype = _prototype;
             } else {
@@ -732,8 +807,8 @@
 
         };
 
-        __classTookit__.initMeta(ZNClass, _args);
-
+        __class._meta(ZNClass, _args);
+        //console.log(_prototype.__define__);
         if (_prototype.__define__) {
             _prototype.__define__.call(ZNClass);
         }

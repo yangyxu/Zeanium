@@ -4,16 +4,10 @@
 (function (zn){
 
     var __slice = Array.prototype.slice,
-        __hasOwnProperty = Object.prototype.hasOwnProperty;
+        __hasOwnProperty = Object.prototype.hasOwnProperty,
+        __toString = Object.prototype.toString;
 
-    var __fixJSON__ = {
-        parse: function (value){
 
-        },
-        stringify: function (value){
-
-        }
-    };
 
     var __fixArray__ = {
         isArray: function (target){
@@ -117,10 +111,63 @@
         }
     };
 
+    var __fixJSON__ = {
+        parse: function (value){
+            return eval('(' + value + ')');
+        },
+        stringify: (function () {
+            var _toString = __toString;
+            var _isArray = Array.isArray;
+            var _escMap = {
+                '"': '\\"',
+                '\\': '\\\\',
+                '\b': '\\b',
+                '\f': '\\f',
+                '\n': '\\n',
+                '\r': '\\r',
+                '\t': '\\t'
+            };
+            var _escFunc = function (m) {
+                return _escMap[m] || '\\u' + (m.charCodeAt(0) + 0x10000).toString(16).substr(1);
+            };
+            var _escRE = /[\\"\u0000-\u001F\u2028\u2029]/g;
+            return function stringify(value) {
+                if (value == null) {
+                    return 'null';
+                } else if (typeof value === 'number') {
+                    return isFinite(value) ? value.toString() : 'null';
+                } else if (typeof value === 'boolean') {
+                    return value.toString();
+                } else if (typeof value === 'object') {
+                    if (typeof value.toJSON === 'function') {
+                        return stringify(value.toJSON());
+                    } else if (_isArray(value)) {
+                        var _values = '[';
+                        for (var i = 0; i < value.length; i++){
+                            _values += (i ? ', ' : '') + stringify(value[i]);
+                        }
+                        return _values + ']';
+                    } else if (_toString.call(value) === '[object Object]') {
+                        var _values = [];
+                        for (var key in value) {
+                            if (value.hasOwnProperty(key)){
+                                _values.push(stringify(key) + ': ' + stringify(value[key]));
+                            }
+                        }
+                        return '{' + _values.join(', ') + '}';
+                    }
+                }
+
+                return '"' + value.toString().replace(_escRE, _escFunc) + '"';
+            };
+        })()
+    };
+
     zn.fix(Array, __fixArray__);
     zn.fix(Array.prototype, __fixArrayPrototype__);
     zn.fix(Function.prototype, __fixFunction__);
-    zn.fix(Object, __fixObject__);
+    //zn.fix(Object, __fixObject__);
+    zn.fix(zn.global.JSON, __fixJSON__);
 
     try {
         Object.defineProperty({}, 'zn', {});

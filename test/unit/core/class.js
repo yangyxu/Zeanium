@@ -3,79 +3,153 @@
  */
 module("class");
 
-var MyBaseClass = zn.class('test.MyBaseClass', {
-    events: ['event1', 'event2', 'event3'],
+var Person = zn.class('test.Person', {
+    events: ['say', 'eat', 'walk'],
     statics: {
-        static1: 'test'
-    },
-    properties: {
-        prop1: 1,
-        prop2: {
-            value: 'foo'
-        },
-        prop3: {
-            get: function () {
-                return 'bar';
-            }
-        },
-        prop4: {
-            value: false
-        },
-        prop5: {
-            get: function () {
-                return this._prop5;
-            },
-            set: function (value) {
-                this._prop5 = value;
-            }
-        },
-        prop6: {
-            get: function () {
-                return this._prop5 + '!';
-            }
+        count: 0,
+        talk: function (){
+            console.log('talk--');
         }
     },
+    properties: {
+        name: {
+            value: ''
+        },
+        age: {
+            value: 10
+        },
+        sex: '0'
+    },
     methods: {
-        init: function (v) {
-            this._value = v;
+        __define__: function (){
+            //console.log('Person define');
         },
-        method1: function () {
-            return 'hello';
+        init: function (values) {
+            //console.log(values);
+            this.sets(values);
         },
-        method2: function () {
-            return this.prop2();
+        say: function () {
+            this.fire('say', 'say hello');
         },
-        method3: function () {
-            return this.get('prop3');
+        eat: function () {
+            this.fire('eat', 'eat food');
         },
-        method4: function (val) {
-            this.prop4(val);
-        },
-        method5: function (val) {
-            this.set('prop5', val);
+        walk: function () {
+            this.fire('walk', 'walk to home.');
         }
     }
 });
 
-var _myClass = new MyBaseClass();
+var User = zn.class('test.User', Person, {
+    events: ['login'],
+    properties: {
+        username: '',
+        password: ''
+    },
+    methods: {
+        __define__: function (){
+            //console.log('User define');
+        },
+        init: function (values) {
+            this.sets(values);
+            this.super(values);
+        },
+        login: function () {
+            console.log('login');
+        }
+    }
+});
 
-//console.log(MyBaseClass);
-console.log(_myClass);
-console.log(_myClass.prop1);
+var Factory = zn.class('test.Factory', {
+    static: true,
+    events: ['create'],
+    properties: {
+        username: '',
+        password: ''
+    },
+    methods: {
+        __define__: function (){
+            console.log('Factory define');
+        },
+        init: function (self) {
+            self.each(function (name){
+               console.log(name);
+            });
+            //console.log(self.constructor._properties_);
+        },
+        create: function () {
+            console.log('create');
+        }
+    }
+});
+
+console.log(Factory.member('username'));
+console.log(Factory.member('create'));
 
 /*
-test("define class", function () {
 
-    var Person = zn.class('Person', {
-        properties: {
-            name: 'name',
-            age: 20
-        }
-    });
-    console.log(Person);
-    var user = new Person();
-    console.log(user);
-    ok(Person, 'The Person is exist.');
+var _yangyxu = new Person({
+    name:'yangyxu',
+    age:25,
+    sex: 1
+});
 
-});*/
+_yangyxu.onsay = function (sender, value){
+    console.log('onsay: '+value);
+}
 
+_yangyxu.on('say', function (sender, value){
+    console.log('on(say1):'+value);
+});
+_yangyxu.on('say', function (sender, value){
+    console.log('on(say2):'+value);
+});
+
+_yangyxu.onsay = function (sender, value){
+    console.log('onsay1: '+value);
+}
+
+_yangyxu.upon('say', function (sender, value){
+    console.log('uponsay: '+value);
+});
+
+_yangyxu.off('say');
+
+_yangyxu.say();
+
+var _wangyuan = new User({
+    name:'wangyuan',
+    age:26,
+    sex: 0
+});
+
+User.each(function (name, index, meta, value){
+    if(index==2){
+        //return -1;
+    }
+    console.log(name, index, meta, value);
+});
+
+_yangyxu.name = 'test';
+console.log(_yangyxu.get('name'));
+console.log(_wangyuan.get('name'));
+console.log(Person.get('name'));
+
+console.log(_yangyxu, _wangyuan);
+
+console.log(User.gets());
+console.log(_wangyuan.gets());
+*/
+
+//var _user = new User();
+
+/*
+console.log(_person);
+console.log(_person.member('name'));
+
+console.log(Person.member('name'));
+console.log(Person.get('age'));
+console.log(_person.get('age'));*/
+
+//console.log(Person);
+//console.log(User);

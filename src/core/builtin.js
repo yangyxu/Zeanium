@@ -5,6 +5,9 @@
     var __toString = Object.prototype.toString;
 
     var __builtin__ = {
+        idle: function (){
+            // empty handler
+        },
         fix: function (target){
             var _target = target||{};
             for (var i = 1, _len = arguments.length; i < _len; i++) {
@@ -112,8 +115,8 @@
 
     var __builtinZNObject__ = {
         toString: function (target){
-            if(target&&target.__toString__){
-                return target.__toString__();
+            if(target&&target.toString){
+                return target.toString();
             } else {
                 return __toString.call(target);
             }
@@ -126,12 +129,24 @@
                     var _len = target.length;
                     if (_len > 0 && __toString.call(target) === '[object Array]') {
                         for (var i = 0; i < _len; i++) {
-                            callback.call(context, target[i], i);
+                            var _callback = callback.call(context, target[i], i);
+                            if(_callback===false){
+                                return false;
+                            }
+                            if(_callback===-1){
+                                continue;
+                            }
                         }
                     } else {
                         for (var _key in target) {
                             if (target.hasOwnProperty(_key)) {
-                                callback.call(context, target[_key], _key);
+                                var _callback = callback.call(context, target[_key], _key);
+                                if(_callback===false){
+                                    return false;
+                                }
+                                if(_callback===-1){
+                                    continue;
+                                }
                             }
                         }
                     }
