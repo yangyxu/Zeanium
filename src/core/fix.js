@@ -167,7 +167,7 @@
     zn.fix(Array.prototype, __fixArrayPrototype__);
     zn.fix(Function.prototype, __fixFunction__);
     //zn.fix(Object, __fixObject__);
-    zn.fix(zn.global.JSON, __fixJSON__);
+    zn.fix(zn.GLOBAL.JSON, __fixJSON__);
 
     try {
         Object.defineProperty({}, 'zn', {});

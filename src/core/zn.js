@@ -2,9 +2,9 @@
  * Global Var
  */
 var zn = {
-    version: '0.0.1',
-    debug: false,
-    global: (function () { return this; }).call(null)
+    VERSION: '0.0.1',
+    DEBUG: false,
+    GLOBAL: (function () { return this; }).call(null)
 };
 
 if (typeof module !== 'undefined' && module.exports) {

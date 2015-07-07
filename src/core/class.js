@@ -12,7 +12,7 @@
     *
     * */
 
-    var GLOBAL = zn.global,
+    var GLOBAL = zn.GLOBAL,
         MEMBER_PREFIX = '@',
         _id_ = 1,  /*class id var*/
         __id__ = 1;  /*instance id var*/
