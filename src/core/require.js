@@ -26,6 +26,7 @@
                     break;
                 case DOUBLE_DOT:
                     var _last = _values[_values.length - 1];
+                    //console.log('last: '+_last);
                     if (_last === DOT || _last === DOUBLE_DOT) {
                         _values.push(DOUBLE_DOT);
                     }
@@ -139,6 +140,61 @@
         }
     });
 
+    /**
+     * Define a module
+     * @param deps
+     * @param callback
+     * @returns {object}
+     */
+    zn.module = function () {
+        var _args = arguments,
+            _len = _args.length,
+            _arg0 = _args[0],
+            _deps = [],
+            _factory = null;
+
+        if (_len === 2) {
+            _deps = _arg0;
+            _factory = _args[1];
+        }
+        else if (_len === 1) {
+            if (zn.is(_arg0, 'function')) {
+                _factory = _arg0;
+            }
+            else if (zn.is(_arg0, 'array')) {
+                _deps = _arg0;
+                _factory = function () {
+                    /*
+                     var result = {};
+                     line.each(arguments, function (mod) {
+                     if (mod.__name__) {
+                     result[mod.__name__] = mod;
+                     }
+                     else {
+                     line.extend(result, mod);
+                     }
+                     });
+
+                     return result;*/
+                };
+            }
+            else {
+                _factory = function () {
+                    return _arg0;
+                };
+            }
+        }
+        else {
+            throw new Error('Invalid arguments.');
+        }
+
+        if(zn.is(_deps, 'string')){
+            _deps = [_deps];
+        }
+
+        return Module.current = new Module('', _deps, _factory);
+    };
+
 
     zn.load = function (path, callback, parent) {
         if (zn.is(path, Module)) {
@@ -152,8 +208,8 @@
 
             if (!zn.PATH) {
                 _slashIndex = path.lastIndexOf(SLASH);
-                _currPath = './' + path.substring(_slashIndex + 1);
-                zn.PATH = path.substring(0, _slashIndex + 1);
+                //_currPath = './' + path.substring(_slashIndex + 1);
+                //zn.PATH = path.substring(0, _slashIndex + 1);
             }
 
             _parentPath = parent ? parent.get('path') : zn.PATH;
@@ -171,7 +227,7 @@
             if (_slashIndex > 0) {
                 _currPath = formatPath(_parentPath ? (_parentPath.substring(0, _parentPath.lastIndexOf(SLASH) + 1) + _currPath) : _currPath);
             }
-            else if (slashIndex == 0) {
+            else if (_slashIndex == 0) {
                 _currPath = formatPath(zn.PATH ? (zn.PATH.substring(0, zn.PATH.lastIndexOf(SLASH)) + _currPath) : _currPath);
             }
             else {
@@ -179,9 +235,11 @@
                     var _znjs = _doc.getElementById('zn-js');
                     if (!_znjs) {
                         zn.each(_doc.getElementsByTagName('script'), function (node) {
-                            _src = node.getAttribute('src') || '';
-                            if (_src.slice(-5) === 'zn.js') {
-                                _znjs = node;
+                            if(node.getAttribute){
+                                _src = node.getAttribute('src') || '';
+                                if (_src.slice(-5) === 'zn.js') {
+                                    _znjs = node;
+                                }
                             }
                         });
                     }
@@ -189,7 +247,7 @@
                     if (_znjs) {
                         _src = _znjs.getAttribute('src');
                         _slashIndex = _src.lastIndexOf(SLASH);
-                        _currPath = _src.slice(0, _slashIndex >= 0 ? (_slashIndex + 1) : 0) + _currPath + '/';
+                        _currPath = _src.slice(0, _slashIndex >= 0 ? (_slashIndex + 1) : 0) + _currPath; // + '/';
                     }
                 }
                 else {
@@ -221,7 +279,7 @@
                                 path: _currPath,
                                 dependencies: Module.current.get('dependencies'),
                                 factory: Module.current.get('factory'),
-                                status: STATUS_LOADING
+                                status: MODULE_STATUS.LOADED
                             });
 
                             _currModule.load(callback);
@@ -230,6 +288,8 @@
 
                     _src = _currPath.slice(-1) === '/' ? _currPath + 'index.js' : _currPath;
                     _src = _src.slice(-3).toLowerCase() === '.js' ? _src : _src + '.js';
+
+                    console.log(_src);
                     _script.src = _src;
 //                  script.async = false;
                     Module.counter++;
@@ -270,6 +330,7 @@
             }
         }
     };
+
 
 
 

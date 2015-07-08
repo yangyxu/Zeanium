@@ -3,6 +3,25 @@
  */
 module("require");
 
-zn.load('../../../test', function (a, b, c){
-    console.log(a, b, c);
+
+zn.module([
+    'core/test.js',
+    'core/test1.js'
+], function (){
+
 });
+
+zn.module([
+    'core/test.js'
+], function (){
+
+});
+
+zn.module('core/test.js', function (){
+
+});
+
+zn.module(function (){
+
+});
+
