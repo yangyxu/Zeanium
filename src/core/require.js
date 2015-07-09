@@ -67,6 +67,18 @@
 
                 this._callbacks = [];
             },
+            exec: function (callback){
+                var _argv = process.argv;
+                var _currPath = _argv[1];
+                var _currModule = Module.all[_currPath] = Module.current;
+
+                _currModule.sets({
+                    path: _currPath,
+                    status: MODULE_STATUS.LOADING
+                });
+
+                return _currModule.load(callback), this;
+            },
             load: function (callback) {
                 var _status = this.get('status'),
                     _callback = callback || zn.idle,
