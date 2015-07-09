@@ -43,15 +43,6 @@
         return _values.join(SLASH);
     }
 
-    var __module = {
-        _arguments: function (){
-
-        },
-        _meta: function (){
-
-        }
-    };
-
     var Module = zn.class('zn.Module', {
         statics: {
             all: {},
@@ -91,14 +82,14 @@
                             _factory = this.get('factory'),
                             _value = this.get('value');
 
-                        var _depLength = deps.length,
+                        var _depLength = _deps.length,
                             _params = [];
 
                         this.set('status', MODULE_STATUS.WAITING);
                         this._callbacks.push(_callback);
 
                         if (_depLength === 0) {
-                            _value = factory.call(_value) || _value;
+                            _value = _factory.call(_value) || _value;
                             this.set('value', _value);
                             this.set('status', MODULE_STATUS.LOADING);
 
@@ -112,7 +103,7 @@
                                     _params[index] = param;
                                     _depLength--;
                                     if (_depLength === 0) {
-                                        _value = factory.apply(_value, _params) || _value;
+                                        _value = _factory.apply(_value, _params) || _value;
                                         _self.set('value', _value);
                                         _self.set('status', MODULE_STATUS.LOADED);
 
@@ -164,18 +155,17 @@
             else if (zn.is(_arg0, 'array')) {
                 _deps = _arg0;
                 _factory = function () {
-                    /*
-                     var result = {};
-                     line.each(arguments, function (mod) {
-                     if (mod.__name__) {
-                     result[mod.__name__] = mod;
-                     }
-                     else {
-                     line.extend(result, mod);
-                     }
+                     var _values = {};
+                     zn.each(arguments, function (_module) {
+                         if (_module._name_) {
+                             _values[_module._name_] = _module;
+                         }
+                         else {
+                            zn.extend(_values, _module);
+                         }
                      });
 
-                     return result;*/
+                     return _values;
                 };
             }
             else {
@@ -192,7 +182,7 @@
             _deps = [_deps];
         }
 
-        return Module.current = new Module('', _deps, _factory);
+        return Module.current = new Module('', _deps, _factory), Module.current;
     };
 
 
@@ -227,7 +217,7 @@
             if (_slashIndex > 0) {
                 _currPath = formatPath(_parentPath ? (_parentPath.substring(0, _parentPath.lastIndexOf(SLASH) + 1) + _currPath) : _currPath);
             }
-            else if (_slashIndex == 0) {
+            else if (_slashIndex === 0) {
                 _currPath = formatPath(zn.PATH ? (zn.PATH.substring(0, zn.PATH.lastIndexOf(SLASH)) + _currPath) : _currPath);
             }
             else {
@@ -279,7 +269,7 @@
                                 path: _currPath,
                                 dependencies: Module.current.get('dependencies'),
                                 factory: Module.current.get('factory'),
-                                status: MODULE_STATUS.LOADED
+                                status: MODULE_STATUS.LOADING
                             });
 
                             _currModule.load(callback);
@@ -288,8 +278,6 @@
 
                     _src = _currPath.slice(-1) === '/' ? _currPath + 'index.js' : _currPath;
                     _src = _src.slice(-3).toLowerCase() === '.js' ? _src : _src + '.js';
-
-                    console.log(_src);
                     _script.src = _src;
 //                  script.async = false;
                     Module.counter++;
@@ -310,12 +298,12 @@
                             else {
                                 _handler(e);
                             }
-                        }
+                        };
                     }
 
                     _script.onerror = function (e) {
                         _handler(e);
-                    }
+                    };
                 }
                 else {
                     require(_currPath);
@@ -323,7 +311,7 @@
                         path: _currPath,
                         dependencies: Module.current.get('dependencies'),
                         factory: Module.current.get('factory'),
-                        status: MODULE_STATUS.LOADED
+                        status: MODULE_STATUS.LOADING
                     });
                     _currModule.load(callback);
                 }

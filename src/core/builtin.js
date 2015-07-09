@@ -126,25 +126,26 @@
                 if(target.__each__){
                     target.__each__(callback, context);
                 } else {
-                    var _len = target.length;
+                    var _len = target.length,
+                        _callBackValue = null;
                     if (_len > 0 && __toString.call(target) === '[object Array]') {
                         for (var i = 0; i < _len; i++) {
-                            var _callback = callback.call(context, target[i], i);
-                            if(_callback===false){
+                            _callBackValue = callback.call(context, target[i], i);
+                            if(_callBackValue===false){
                                 return false;
                             }
-                            if(_callback===-1){
+                            if(_callBackValue===-1){
                                 continue;
                             }
                         }
                     } else {
                         for (var _key in target) {
                             if (target.hasOwnProperty(_key)) {
-                                var _callback = callback.call(context, target[_key], _key);
-                                if(_callback===false){
+                                _callBackValue = callback.call(context, target[_key], _key);
+                                if(_callBackValue===false){
                                     return false;
                                 }
-                                if(_callback===-1){
+                                if(_callBackValue===-1){
                                     continue;
                                 }
                             }

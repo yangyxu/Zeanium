@@ -113,7 +113,7 @@
 
     var __fixJSON__ = {
         parse: function (value){
-            return eval('(' + value + ')');
+            return ''; //eval('(' + value + ')');
         },
         stringify: (function () {
             var _toString = __toString;
@@ -139,16 +139,17 @@
                 } else if (typeof value === 'boolean') {
                     return value.toString();
                 } else if (typeof value === 'object') {
+                    var _values;
                     if (typeof value.toJSON === 'function') {
                         return stringify(value.toJSON());
                     } else if (_isArray(value)) {
-                        var _values = '[';
+                        _values = '[';
                         for (var i = 0; i < value.length; i++){
                             _values += (i ? ', ' : '') + stringify(value[i]);
                         }
                         return _values + ']';
                     } else if (_toString.call(value) === '[object Object]') {
-                        var _values = [];
+                        _values = [];
                         for (var key in value) {
                             if (value.hasOwnProperty(key)){
                                 _values.push(stringify(key) + ': ' + stringify(value[key]));

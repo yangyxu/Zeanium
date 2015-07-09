@@ -805,7 +805,7 @@
                 _prototype.__ctor__ = _meta.methods.init;
             }
 
-        };
+        }
 
         __class._meta(ZNClass, _args);
         //console.log(_prototype.__define__);
@@ -818,7 +818,7 @@
         }
 
         return ZNClass;
-    };
+    }
 
     zn.class = define;
 
