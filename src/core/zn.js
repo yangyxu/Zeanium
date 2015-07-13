@@ -10,3 +10,5 @@ var zn = {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = zn;
 }
+
+zn.GLOBAL.zn = zn;  //set global zn var

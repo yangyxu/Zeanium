@@ -1,1 +1,0 @@
-!function(a){a.class("zn.dom.Element",{properties:{dom:{readonly:!0,get:function(){return this._dom}}},methods:{init:function(a){this._dom=a}}})}(zn);

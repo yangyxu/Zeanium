@@ -11,8 +11,8 @@ module.exports = function (grunt) {
             core: {
                 src: '<%= pkg.core %>'
             },
-            dom: {
-                src: '<%= pkg.dom %>'
+            data: {
+                src: '<%= pkg.data %>'
             },
             options: {
                 eqnull: true
@@ -23,9 +23,9 @@ module.exports = function (grunt) {
                 src: '<%= pkg.core %>',
                 dest: 'dest/js/zn.js'
             },
-            dom: {
-                src: '<%= pkg.dom %>',
-                dest: 'dest/js/zn-dom.js'
+            data: {
+                src: '<%= pkg.data %>',
+                dest: 'dest/js/zn-data.js'
             }
         },
         uglify: {
@@ -38,9 +38,9 @@ module.exports = function (grunt) {
                     }
                 }
             },
-            dom: {
-                src: ['dest/js/zn-dom.js'],
-                dest: 'dest/js/zn-dom.minx.js',
+            data: {
+                src: ['dest/js/zn-data.js'],
+                dest: 'dest/js/zn-data.minx.js',
                 options: {
                     beautify: {
                         ascii_only: true
@@ -52,8 +52,7 @@ module.exports = function (grunt) {
 
     grunt.loadNpmTasks('grunt-contrib');
 
-
-
     grunt.registerTask('default', ['clean', 'jshint', 'concat', 'uglify']);
     grunt.registerTask('test', ['clean', 'concat']);
+
 };
