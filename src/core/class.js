@@ -700,7 +700,15 @@
                 });
 
                 zn.each(_meta.properties, function (value, key) {
-                    _Class.defineProperty(key, zn.is(value, 'object') ? value : { value: value });
+                    var _value = value;
+                    if(zn.is(_value, 'object')){
+                        if(!_value.value){
+                            _value = { value: _value };
+                        }
+                    }else {
+                        _value = { value: _value };
+                    }
+                    _Class.defineProperty(key, _value);
                 });
 
                 zn.each(_meta.methods, function (value, key) {
