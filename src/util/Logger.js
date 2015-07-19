@@ -15,7 +15,7 @@
      * @class Date
      * @namespace zn.util
      **/
-    var DateUtil = zn.class('DateUtil', {
+    var DateUtil = zn.class('zn.util.DateUtil', {
         static: true,
         properties: {
 

@@ -16,7 +16,7 @@
         REJECTED: 2
     };
 
-    var Async = zn.class('Async', {
+    var Async = zn.class('zn.util.Async', {
         static: true,
         methods: {
             init: function (inArgs) {
