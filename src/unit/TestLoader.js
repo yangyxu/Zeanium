@@ -11,8 +11,7 @@
                 this._caseMethods = [];
             },
             load: function (path){
-                this._casePaths.push(path);
-                return this;
+                return this._casePaths.push(path), this;
             },
             run: function () {
                 this.__testingCase();
