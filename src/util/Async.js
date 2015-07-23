@@ -40,8 +40,8 @@
                 this._finallys.push(onFinally);
                 return this;
             },
-            defer: function (inArgs) {
-                var _self = this, _defer = new Defer(inArgs);
+            defer: function (resolve, reject) {
+                var _self = this, _defer = new Defer(resolve, reject);
                 _defer.on('complete', function (sender, data){
                     _self._currIndex++;
                     _self._dataArray.push(data);
@@ -92,8 +92,14 @@
             promise: null
         },
         methods: {
-            init: function (inArgs) {
+            init: function (resolve, reject) {
                 this._promise = new Promise();
+                if(resolve){
+                    this.resolve(resolve);
+                }
+                if(reject){
+                    this.reject(reject);
+                }
             },
             resolve: function (data) {
                 try{
@@ -134,7 +140,7 @@
     var Promise = zn.class('Promise', {
         statics: {
             isPromise: function (obj) {
-                return obj !== null && typeof obj.then === 'function';
+                return obj !== null && obj !== undefined && typeof obj.then === 'function';
             },
             defer: null
         },

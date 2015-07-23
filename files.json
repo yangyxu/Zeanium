@@ -5,6 +5,7 @@
         "src/core/fix.js",
         "src/core/class.js",
         "src/core/require.js",
+        "src/format/String.js",
         "src/util/Async.js",
         "src/util/Logger.js",
         "src/unit/TestCase.js",

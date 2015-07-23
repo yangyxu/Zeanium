@@ -3,7 +3,7 @@
     var TestLoader = zn.class('zn.unit.TestLoader',{
         static: true,
         properties: {
-
+            basePath: ''
         },
         methods: {
             init: function (){
@@ -11,15 +11,25 @@
                 this._caseMethods = [];
             },
             load: function (path){
-                return this._casePaths.push(path), this;
+                if(Array.isArray(path)){
+                    this._casePaths.concat(path);
+                }else {
+                    this._casePaths.push(path);
+                }
+
+                return this;
             },
             run: function () {
                 this.__testingCase();
             },
             __testingCase: function (){
-                var _case = this._casePaths.shift(), _self = this;
+                var _case = this._casePaths.shift(),
+                    _basePath = this.basePath,
+                    _path = _basePath + _case;
+                    _self = this;
+
                 if(_case){
-                    zn.load(_case, function (testCaseClass){
+                    zn.load(_path, function (testCaseClass){
                         var _methods = testCaseClass.getMeta('methods')||[];
                         zn.info('Testing Case: '+ _case);
                         _self.__testingCaseMethods(_methods);
@@ -63,7 +73,7 @@
                 var minutes=Math.floor(leave2/(60*1000));
                 var leave3=leave2%(60*1000);
                 var seconds=Math.round(leave3/1000);
-                zn.info('Test method '+methodname+' { second: '+seconds+'s, diff: '+_diff+' }');
+                zn.info('Test method '+methodname+' :{ second: '+seconds+'s, diff: '+_diff+' }');
             }
         }
     });

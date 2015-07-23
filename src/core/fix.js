@@ -29,6 +29,14 @@
 
             return this;
         },
+        toJSON: function (){
+            var _data = {};
+            for(var i= 0, _len = this.length; i < _len; i++){
+                _data[i] = this[i];
+            }
+
+            return _data;
+        },
         indexOf: function (item){
             for(var i= 0, _len = this.length; i < _len; i++){
                 if (this[i] === item){
@@ -59,6 +67,9 @@
     };
 
     var __fixObject__ = {
+        toArray: function (target){
+            return __slice.call(target);
+        },
         keys: function (obj){
             if(obj !== Object(obj)){
                 throw new TypeError('Object.keys called on a non-object');

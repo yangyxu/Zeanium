@@ -101,6 +101,9 @@
             counter: 0,
             preLoadedPackage: {},
             loadModule: function (path, callback, parent){
+                if (zn.is(path, Module)){
+                    return path.load(callback);
+                }
                 if (path.substring(0, 5) === 'node:') {
                     return callback(require(path.substring(5)));
                 }
@@ -108,6 +111,7 @@
                 if(_path.slice(-1) === '/'){
                     _path += 'index.js';
                 }
+
                 var _module = Module.all[_path];
                 if (_module) {
                     _module.load(callback);
@@ -243,7 +247,7 @@
                 if (_depLength === 0) {
                     _value = _factory.call(_value) || _value;
                     this.set('value', _value);
-                    this.set('status', MODULE_STATUS.LOADING);
+                    this.set('status', MODULE_STATUS.LOADED);
 
                     zn.each(this._callbacks, function (cb) {
                         cb(_value);
@@ -379,20 +383,7 @@
                 });
             },
             load: function (path, callback, parent) {
-                if (zn.is(path, Module)) {
-                    path.load(callback);
-                }else if (zn.is(path, 'string')) {
-                    var _currPath = path;
-
-                    if (_currPath.substring(0, 5) === 'node:') {
-                        if (callback) {
-                            callback(require(_currPath.substring(5)));
-                        }
-                        return true;
-                    }
-
-                    Module.loadModule(_currPath, callback, parent);
-                }
+                return Module.loadModule(path, callback, parent), this;
             }
         }
     });
