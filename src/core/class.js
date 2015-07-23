@@ -46,6 +46,7 @@
                 _key = __define.fixTargetKey(name),
                 _exist = _key in _ctor,
                 _descriptor = {};
+
             if(!_exist){
                 _descriptor = Object.defineProperty(target, 'on' + name.toLowerCase(), {
                     get: function () {
@@ -93,9 +94,12 @@
             var _getter, _setter;
 
             if ('value' in meta) {
-                var _value = meta.value;
-                var _field = '_' + name;
-                _getter = function () {
+                var _value = meta.value,
+                    _field = '_' + name,
+                    _get = meta.get,
+                    _set = meta.set;
+
+                _getter = _get || function () {
                     if (_field in this) {
                         return this[_field];
                     }
@@ -112,9 +116,9 @@
                             return false;
                         }
                     } :
-                    function (value) {
+                    (_set ||function (value) {
                         this[_field] = value;
-                    };
+                    });
             } else {
                 _getter = meta.get || function () {
                     return undefined;
@@ -177,6 +181,7 @@
     };
 
     var sharedMethods = {
+        __handlers__: {},
         /**
          * Get specified member.
          * @param name
@@ -700,15 +705,7 @@
                 });
 
                 zn.each(_meta.properties, function (value, key) {
-                    var _value = value;
-                    if(zn.is(_value, 'object')){
-                        if(!_value.value){
-                            _value = { value: _value };
-                        }
-                    }else {
-                        _value = { value: _value };
-                    }
-                    _Class.defineProperty(key, _value);
+                    _Class.defineProperty(key, zn.is(value, 'object') ? value : { value: value });
                 });
 
                 zn.each(_meta.methods, function (value, key) {
@@ -816,7 +813,7 @@
         }
 
         __class._meta(ZNClass, _args);
-        //console.log(_prototype.__define__);
+
         if (_prototype.__define__) {
             _prototype.__define__.call(ZNClass);
         }

@@ -1,7 +1,7 @@
 /**
  * Created by yangyxu on 7/6/15.
  */
-zn.module(['./Module3.js'],function (Module1){
+zn.define(['./Module3.js'],function (Module1){
 
     console.log('loading --- module4');
     console.log(Module1._name_);

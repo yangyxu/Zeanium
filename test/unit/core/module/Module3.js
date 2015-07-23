@@ -1,7 +1,7 @@
 /**
  * Created by yangyxu on 7/6/15.
  */
-zn.module([
+zn.define([
     './Module1.js',
     './Module2.js'
 ],function (Module1, Module2){

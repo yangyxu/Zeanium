@@ -13,12 +13,15 @@ var Person = zn.class('test.Person', {
     },
     properties: {
         name: {
-            value: ''
-        },
-        age: {
-            value: 10
-        },
-        sex: '0'
+            set: function (value){
+                console.log('set name: '+value);
+                this._name = value;
+            },
+            get: function (value){
+                console.log('get name:' + this._name);
+                return this._name;
+            }
+        }
     },
     methods: {
         __define__: function (){
@@ -40,6 +43,16 @@ var Person = zn.class('test.Person', {
     }
 });
 
+var p1 = new Person();
+
+p1.name = 'aa';
+
+console.log(p1.name);
+
+console.log(p1);
+
+/*
+
 var User = zn.class('test.User', Person, {
     events: ['login'],
     properties: {
@@ -60,6 +73,8 @@ var User = zn.class('test.User', Person, {
     }
 });
 
+
+
 var Factory = zn.class('test.Factory', {
     static: true,
     events: ['create'],
@@ -72,10 +87,7 @@ var Factory = zn.class('test.Factory', {
             console.log('Factory define');
         },
         init: function (self) {
-            self.each(function (name){
-               console.log(name);
-            });
-            //console.log(self.constructor._properties_);
+
         },
         create: function () {
             console.log('create');
@@ -83,8 +95,8 @@ var Factory = zn.class('test.Factory', {
     }
 });
 
-console.log(Factory.member('username'));
-console.log(Factory.member('create'));
+*/
+
 
 /*
 
