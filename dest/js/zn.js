@@ -635,17 +635,25 @@ zn.GLOBAL.zn = zn;  //set global zn var
             }
 
             if (_exist) {
-                _getter.__super__ = target[_key].getter;
-                _setter.__super__ = target[_key].setter;
+                _getter.__super__ = _ctor[_key].getter;
+                _setter.__super__ = _ctor[_key].setter;
             }
 
+            /*
             if(!_exist){
                 _descriptor = Object.defineProperty(target, name, {
                     get: _getter,
                     set: _setter,
-                    configurable: true
+                    configurable : true
                 });
-            }
+            }*/
+
+
+            _descriptor = Object.defineProperty(target, name, {
+                get: _getter,
+                set: _setter,
+                configurable : true
+            });
 
             _ctor[_key] = {
                 name: name,
@@ -1268,7 +1276,7 @@ zn.GLOBAL.zn = zn;  //set global zn var
                     throw new Error('Partial class "' + _name + '" must not be static.');
                 }
 
-                if (ZNClass._super_ !== _super && Class._super_ !== ZNObject) {
+                if (ZNClass._super_ !== _super && ZNClass._super_ !== ZNObject) {
                     throw new Error('Partial class "' + _name + '" must have consistent super class.');
                 }
 
@@ -1296,6 +1304,16 @@ zn.GLOBAL.zn = zn;  //set global zn var
                             this.__ctor__.apply(this, arguments);
                         }
 
+                        (function (__super__, __context__){
+                            if(__super__){
+                                var _superCtor = _super.member('init');
+                                if(_superCtor.meta.auto){
+                                    _superCtor.meta.value.apply(__context__, arguments);
+                                }
+                                arguments.callee(__super__._super, __context__);
+                            }
+                        })(this.__super__, this);
+
                         this.__initializing__ = false;
                     };
             }
@@ -1306,6 +1324,8 @@ zn.GLOBAL.zn = zn;  //set global zn var
                 _prototype = new _SuperClass();
                 _prototype.constructor = ZNClass;
                 _prototype.__type__ = _name || 'Anonymous';
+                _prototype.__super__ = _super;
+
 
                 ZNClass.prototype = _prototype;
             } else {
@@ -2397,6 +2417,174 @@ zn.GLOBAL.zn = zn;  //set global zn var
         methods: {
             init: function (inArgs) {
                 this.sets(inArgs);
+            }
+        }
+    });
+
+})(zn);
+/**
+ * Created by yangyxu on 2015/7/23.
+ * Observable
+ */
+(function (zn){
+    /**
+     * Observable
+     * @class Observable
+     * @namespace zn.data
+     **/
+
+    var Observable = zn.class('zn.data.Observable', {
+        properties: {
+
+        },
+        methods: {
+            init: {
+                auto: true,
+                value: function (inArgs) {
+                    this.__watchers__ = {};
+                }
+            },
+            watch: function (path, handler, context){
+                var _paths = path === '*' ?
+                    this.constructor.__properties__ :
+                    (zn.is(path, 'array') ? path : [ path ]);
+
+                _paths.forEach(function (_path){
+                    this.__watch(_path, handler, context);
+                }, this);
+
+                return this;
+            },
+            unwatch: function (path, handler, context){
+                var _paths = path === '*' ?
+                    this.constructor.__properties__ :
+                    (zn.is(path, 'array') ? path : [ path ]);
+
+                _paths.forEach(function (_path){
+                    this.__unwatch(_path, handler, context);
+                }, this);
+
+                return this;
+            },
+            notify: function (name){
+                var _names = name === '*' ? Object.keys(this.__watchers__) : (zn.is(name, 'array') ? name : [ name ]);
+
+                zn.each(_names, function (_name){
+                    this.__notify(_name);
+                }, this);
+
+                return this;
+            },
+            __watch: function (path, handler, context){
+                var _index = path.indexOf('.'),
+                    _name = path,
+                    _subPath = '',
+                    __watchers__ = this.__watchers__;
+
+                if (_index >= 0) {
+                    _name = path.slice(0, _index);
+                    _subPath = path.slice(_index + 1);
+                    var _sub = this.get(_name);
+                    if (_sub && _sub.watch) {
+                        _sub.watch(_subPath, handler, context);
+                    }
+                }
+
+                var _watchers = __watchers__[_name] = __watchers__[_name] || [];
+
+                _watchers.push({
+                    handler: handler,
+                    context: context,
+                    fullPath: path,
+                    subPath: _subPath
+                });
+
+                var _prop = this.member(_name);
+                if (_prop && _prop.type === 'property') {
+                    var _meta = _prop.meta;
+                    if (!_meta.watched) {
+                        var _getter = _prop.getter,
+                            _setter = _prop.setter;
+
+                        Observable.defineProperty(_name, {
+                            get: function (options) {
+                                return _getter.call(this, options);
+                            },
+                            set: function (value, options) {
+                                var _oldValue = _getter.call(this);
+                                if (_oldValue !== value || (options && options.force)) {
+                                    this.__unbind(_name, _oldValue);
+                                    if (_setter.call(this, value, options) !== false) {
+                                        this.__bind(_name, value);
+                                        this.notify(_name);
+                                    }
+                                }
+                            },
+                            watched: true
+                        }, this);
+                    }
+                }
+            },
+            __unwatch: function (path, handler, context){
+                var _index = path.indexOf('.'),
+                    _name = path,
+                    _subPath = '',
+                    __watchers__ = this.__watchers__;
+
+                if (_index >= 0) {
+                    _name = path.slice(0, _index);
+                    _subPath = path.slice(_index + 1);
+                    var _sub = this.get(_name);
+                    if (_sub && _sub.unwatch) {
+                        _sub.unwatch(_subPath, handler, context);
+                    }
+                }
+
+                var _watchers = __watchers__[_name],
+                    _watcher;
+
+                if (!_watchers){
+                    return false;
+                }
+
+                if (handler) {
+                    for (var i = 0, _len = _watchers.length; i < _len; i++) {
+                        _watcher = _watchers[i];
+                        if (_watcher.handler === handler && _watcher.context === context) {
+                            _watchers.splice(i, 1);
+                            break;
+                        }
+                    }
+                }
+                else {
+                    _watchers.length = 0;
+                }
+            },
+            __bind: function (name, value){
+                if (value && value.watch) {
+                    zn.each(this.__watchers__[name], function (watcher) {
+                        if (watcher.subPath) {
+                            value.watch(watcher.subPath, watcher.handler, watcher.context);
+                        }
+                    });
+                }
+            },
+            __unbind: function (name, value){
+                if (value && value.unwatch) {
+                    zn.each(this.__watchers__[name], function (watcher) {
+                        if (watcher.subPath) {
+                            value.unwatch(watcher.subPath, watcher.handler, watcher.context);
+                        }
+                    });
+                }
+            },
+            __notify: function (name){
+                var _value = this.get(name);
+                zn.each(this.__watchers__[name], function (watcher) {
+                    if (watcher && watcher.handler) {
+                        watcher.handler.call(watcher.context, zn.path(_value, watcher.subPath), watcher.fullPath, this);
+                    }
+                }, this);
             }
         }
     });

@@ -11,7 +11,8 @@
         "src/unit/TestCase.js",
         "src/unit/TestLoader.js",
         "src/data/List.js",
-        "src/data/Task.js"
+        "src/data/Task.js",
+        "src/data/Observable.js"
     ],
     "data": [
 

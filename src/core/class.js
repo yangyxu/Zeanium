@@ -129,17 +129,25 @@
             }
 
             if (_exist) {
-                _getter.__super__ = target[_key].getter;
-                _setter.__super__ = target[_key].setter;
+                _getter.__super__ = _ctor[_key].getter;
+                _setter.__super__ = _ctor[_key].setter;
             }
 
+            /*
             if(!_exist){
                 _descriptor = Object.defineProperty(target, name, {
                     get: _getter,
                     set: _setter,
-                    configurable: true
+                    configurable : true
                 });
-            }
+            }*/
+
+
+            _descriptor = Object.defineProperty(target, name, {
+                get: _getter,
+                set: _setter,
+                configurable : true
+            });
 
             _ctor[_key] = {
                 name: name,
@@ -762,7 +770,7 @@
                     throw new Error('Partial class "' + _name + '" must not be static.');
                 }
 
-                if (ZNClass._super_ !== _super && Class._super_ !== ZNObject) {
+                if (ZNClass._super_ !== _super && ZNClass._super_ !== ZNObject) {
                     throw new Error('Partial class "' + _name + '" must have consistent super class.');
                 }
 
@@ -790,6 +798,16 @@
                             this.__ctor__.apply(this, arguments);
                         }
 
+                        (function (__super__, __context__){
+                            if(__super__){
+                                var _superCtor = _super.member('init');
+                                if(_superCtor.meta.auto){
+                                    _superCtor.meta.value.apply(__context__, arguments);
+                                }
+                                arguments.callee(__super__._super, __context__);
+                            }
+                        })(this.__super__, this);
+
                         this.__initializing__ = false;
                     };
             }
@@ -800,6 +818,8 @@
                 _prototype = new _SuperClass();
                 _prototype.constructor = ZNClass;
                 _prototype.__type__ = _name || 'Anonymous';
+                _prototype.__super__ = _super;
+
 
                 ZNClass.prototype = _prototype;
             } else {
