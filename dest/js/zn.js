@@ -1305,9 +1305,9 @@ zn.GLOBAL.zn = zn;  //set global zn var
                         }
 
                         (function (__super__, __context__){
-                            if(__super__){
-                                var _superCtor = _super.member('init');
-                                if(_superCtor.meta.auto){
+                            if(__super__ && __super__ !== ZNObject){
+                                var _superCtor = __super__.member('init');
+                                if(_superCtor && _superCtor.meta.auto){
                                     _superCtor.meta.value.apply(__context__, arguments);
                                 }
                                 arguments.callee(__super__._super, __context__);

@@ -20,6 +20,12 @@
                     this.__watchers__ = {};
                 }
             },
+            dispose: function () {
+                zn.each(this.__watchers__, function (watchers, name) {
+                    this.__unbind(name, this.get(name));
+                }, this);
+                this.__watchers__ = null;
+            },
             watch: function (path, handler, context){
                 var _paths = path === '*' ?
                     this.constructor.__properties__ :
