@@ -9,6 +9,7 @@ var zn = {
 
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = zn;
+    zn.znPath = __dirname;
 }
 
 zn.GLOBAL.zn = zn;  //set global zn var
@@ -2443,6 +2444,12 @@ zn.GLOBAL.zn = zn;  //set global zn var
                 value: function (inArgs) {
                     this.__watchers__ = {};
                 }
+            },
+            dispose: function () {
+                zn.each(this.__watchers__, function (watchers, name) {
+                    this.__unbind(name, this.get(name));
+                }, this);
+                this.__watchers__ = null;
             },
             watch: function (path, handler, context){
                 var _paths = path === '*' ?

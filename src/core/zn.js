@@ -9,6 +9,7 @@ var zn = {
 
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = zn;
+    zn.znPath = __dirname;
 }
 
 zn.GLOBAL.zn = zn;  //set global zn var
