@@ -1,13 +1,17 @@
 (function (zn){
 
-    var User = zn.class('zn.model.User', {
+    var User = zn.class('zn.model.User', zn.data.Bindable, {
         properties: {
             firstName: '',
             lastName: '',
             fullName: {
                 binding: {
-                    sourcePath: '#firstName'
-                }
+                    sourcePaths: '#firstName, #lastName, #sex',
+                    convert: function (first, last, sex){
+                        return first + '/' + last+':' + sex;
+                    }
+                },
+                value: ''
             },
             age: 0,
             sex: '男'
@@ -26,8 +30,18 @@
         sex: '男'
     });
 
-    var binding = new zn.data.Binding(yangyxu, 'fullName');
 
-    console.log(binding);
+    yangyxu.watch('firstName', function (a, b, c){
+        //console.log(a, b, c);
+    });
+
+    console.log(yangyxu.fullName);
+
+    yangyxu.firstName ='wang';
+
+    yangyxu.lastName ='yuan';
+
+    console.log(yangyxu.fullName);
+
 
 })(zn);

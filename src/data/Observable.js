@@ -16,7 +16,7 @@
         methods: {
             init: {
                 auto: true,
-                value: function (inArgs) {
+                value: function () {
                     this.__watchers__ = {};
                 }
             },

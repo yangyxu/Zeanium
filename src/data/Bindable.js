@@ -1,10 +1,10 @@
 /**
  * Created by yangyxu on 2015/7/28.
- * Observable
+ * Binding
  */
 (function (zn){
 
-    var Binding = zn.class('zn.data.Binding', zn.data.Observable, {
+    var Binding = zn.class({
         properties: {
             direction: {
                 value: 'oneway',
@@ -19,23 +19,24 @@
                 readonly: true
             },
             source: {
-                get: function () {
-                    return this._ownerBinding ? this._owner : this._source;
+                get: function (bindingOwner) {
+                    return bindingOwner ? this._owner : this._source;
                 },
                 set: function (value) {
                     this._source = value;
-                    this._rebind();
+                    this.__rebind();
                 }
             },
-            sourcePath: {
+            sourcePaths: {
                 get: function () {
-                    return this._sourcePath;
+                    return this._sourcePaths;
                 },
                 set: function (value) {
-                    this._sourcePath = value;
-                    if (!this._ownerBinding) {
-                        this._rebind();
-                    }
+                    this._sourcePaths = this.__parseSourcePaths(value, function (bindingOwner, path){
+                        if(bindingOwner){
+                            this.__rebind();
+                        }
+                    }.bind(this));
                 }
             },
             owner: {
@@ -54,37 +55,30 @@
             init: function (target, targetPath, options) {
                 var _options = options || {},
                     _member = target.member(targetPath),
-                    _bindingMeta = (_member && _member.meta.binding) || {};
+                    _bindingMeta = (_member && _member.meta.binding) || {},
+                    _self = this;
 
-                zn.overwrite(_options, _bindingMeta, {
+                zn.overwrite(_options, {
                     direction: 'oneway',
-                    converter: null,
-                    sourcePath: ''
+                    converter: { },
                 });
 
                 var _direction = this._direction = _options.direction;
-                this._converter = _options.converter;
                 this._source = _options.source;
-                this._sourcePath = _options.sourcePath;
-                this._owner = _options.owner;
+                this._sourcePaths = this.__parseSourcePaths(_options.sourcePaths);
+                this._owner = _options.owner || target;
+                this._converter = this.__parseConverter(_options);
+
                 this._target = target;
                 this._targetPath = targetPath;
-
-                if (this._sourcePath.charAt(0) === '#') {
-                    this._sourcePath = this._sourcePath.substring(1);
-                    this._ownerBinding = true;
-                }
-
-                if (zn.is(this._converter, 'string')) {
-                    this._converterPath = this._converter;
-                }
 
                 if (_direction === 'twoway' || _direction === 'oneway') {
                     this.__rebind();
                 }
+
                 if (_direction === 'twoway' || _direction === 'inverse') {
                     target.watch(targetPath, function (value) {
-                        zn.path(this._ownerBinding ? this._owner : this._source, this._sourcePath, value);
+                        this.__updateSource(value);
                     }, this);
                 }
             },
@@ -92,95 +86,144 @@
                 this._source = null;
                 this.__rebind();
             },
-            __rebind: function () {
-                var _owner = this._owner,
-                    _source = this._ownerBinding ? _owner : this._source,
-                    _sourcePath = this._sourcePath,
+            __updateSource: function (value){
+                var _converter = this._converter,
+                    _value = null;
+
+                zn.each(this.sourcePaths, function (path){
+                    _value = _converter.revert.call(_converter.context, value);
+                    zn.path(this.get('source', path[0]), path[1], _value);
+                }, this);
+
+                return this;
+            },
+            __updateTarget: function (){
+                var _self = this,
+                    _values = [],
+                    _value = null,
+                    _owner = this._owner,
                     _target = this._target,
                     _targetPath = this._targetPath,
-                    _converter = this._converterPath;
-
-                var _watcher = this._watcher,
-                    _handler, _index, _key, _subPath, _context;
-
-                if (_watcher) {
-                    _watcher.source.unwatch(_watcher.path, _watcher.handler);
-                    this._watcher = null;
-                }
-
-                if (_converter) {
-                    _index = _converter.lastIndexOf('.');
-                    _key = _converter;
-                    _context = _owner;
-                    if (_index >= 0) {
-                        _subPath = _sourcePath.slice(0, _index);
-                        _key = _sourcePath.slice(_index + 1);
-                        _context = zn.path(_source, _subPath);
-                    }
-                    _converter = _context && _context[_key];
-                }
-                else {
                     _converter = this._converter;
+
+                zn.each(this.sourcePaths, function (path){
+                    _value = zn.path(_self.get('source', path[0]), path[1]);
+                    _value = zn.is(_value, 'function') ? _value.bind(_owner) : _value;
+                    _values.push(_value);
+                });
+
+                return _target.set(_targetPath, _converter.convert.apply(_converter.context, _values)), this;
+            },
+            __rebind: function () {
+                var _sourcePaths = this._sourcePaths,
+                    _watchers = this._watchers;
+
+                if (_watchers) {
+                    zn.each(_watchers, function (watch){
+                        watch.source.unwatch(watch.path, watch.handler);
+                    });
+                    this._watchers = null;
                 }
 
-                if (zn.is(_converter, 'function')) {
+                zn.each(_sourcePaths, function (path){
+                    var _bindingOwner = path[0],
+                        _path = path[1],
+                        _source = this.get('source', _bindingOwner);
+
+                    if(zn.can(_source, 'watch')){
+                        _source.watch(_path, this.__updateTarget.bind(this));
+                        _watchers = _watchers||[];
+                        _watchers.push({
+                            source: _source,
+                            path: _path,
+                            handler: this.__updateTarget
+                        });
+                    }
+                }, this);
+
+                return this.__updateTarget();
+            },
+            __parseSourcePaths: function (sourcePaths, callback){
+                var _paths = sourcePaths.split(','),
+                    _path = '',
+                    _bindingOwner = false;
+
+                for(var i= 0, _len = _paths.length; i < _len; i++){
+                    _path = _paths[i].trim();
+                    if(_path.charAt(0) === '#'){
+                        _path = _path.substring(1);
+                        _bindingOwner = true;
+                    }
+                    _paths[i] = [_bindingOwner, _path];
+                    if(callback){
+                        callback(_bindingOwner, _path);
+                    }
+                }
+
+                return _paths;
+            },
+            __parseConverter: function (options){
+                var _converter = options.converter;
+                if(zn.is(_converter, 'string') || zn.is(_converter, 'function')){
                     _converter = {
-                        context: _context,
-                        convert: _converter,
-                        convertBack: function (value) {
-                            return value;
-                        }
+                        convert: _converter
                     };
                 }
+                var _convert = _converter.convert = options.convert || _converter.convert  || function (value){ return value; };
+                _converter.revert = options.revert || function (value) { return value; };
+                _converter.context = options.context || this.owner;
 
-                _handler = _converter ? function (value) {
-                    var _value = _converter.convert.call(_converter.context, zn.is(value, 'function') ? value.bind(_owner) : value);
-                    _target.set(_targetPath, _value);
-                } : function (value) {
-                    _target.set(_targetPath, zn.is(value, 'function') ? value.bind(_owner) : value);
-                };
+                if(zn.is(_convert, 'string')){
+                    var _index =  _convert.lastIndexOf('.'),
+                        _key = _convert,
+                        _context = this.source || this.owner,
+                        _subPath = '';
 
-                if (zn.can(_source, 'watch')) {
-                    _source.watch(_sourcePath, _handler);
-                    this._watcher = {
-                        source: _source,
-                        path: _sourcePath,
-                        handler: _handler
-                    };
+                    if(_index>0){
+                        _subPath = _convert.slice(0, _index);
+                        _key = _convert.slice(_index + 1);
+                        _context = zn.path(this.source, _subPath);
+                    }
+
+                    _convert = _context && _context[_key];
                 }
 
-                _handler(zn.path(_source, _sourcePath));
+                return _converter.convert = _convert, _converter;
             }
         }
     });
 
-
+    /**
+     * @class Bindable
+     * @namespace zn.data.Bindable
+     * @type {Function}
+     * @return {Function}
+     */
     var Bindable = zn.class('zn.data.Bindable', zn.data.Observable, {
         statics: {
             parseOptions: function (value, owner) {
-                var result = null;
-                if (typeof value === 'string'
-                    && value.charAt(0) === '{'
-                    && value.charAt(value.length - 1) === '}') {
+                var _value = null;
+                if (typeof value === 'string' && value.charAt(0) === '{' && value.charAt(value.length - 1) === '}') {
 
-                    var expr = value.slice(1, -1);
-                    var tokens = expr.split(',');
-                    result = {
-                        $binding: true,
+                    var _expr = value.slice(1, -1),
+                        _tokens = _expr.split(';');
+
+                    _value = {
                         owner: owner,
-                        sourcePath: tokens.shift()
+                        sourcePaths: _tokens.shift()
                     };
 
-                    line.each(tokens, function (token) {
-                        var option = token.split('=');
-                        result[option[0]] = option[1];
+                    zn.each(_tokens, function (token) {
+                        if(!token){ return -1; }
+                        var _option = token.split('=');
+                        _value[_option[0]] = _option[1];
                     });
                 }
-                else if (typeof value === 'object' && value.$binding) {
-                    result = value;
+                else if (typeof value === 'object') {
+                    _value = value;
                 }
 
-                return result;
+                return _value;
             }
         },
         properties: {
@@ -197,8 +240,14 @@
             }
         },
         methods: {
-            init: function () {
-                this.__bindings__ = {};
+            init: {
+                auto: true,
+                value: function () {
+                    this.__bindings__ = {};
+                },
+                after: function (){
+                    this.__binding();
+                }
             },
             dispose: function () {
                 this.super();
@@ -208,9 +257,9 @@
                 this.__bindings__ = null;
             },
             let: function (name, value) {
-                var binding = Bindable.parseOptions(value);
-                if (binding) {
-                    this.setBinding(name, binding);
+                var _binding = Bindable.parseOptions(value);
+                if (_binding) {
+                    this.setBinding(name, _binding);
                 }
                 else {
                     this.set(name, value);
@@ -221,8 +270,9 @@
             },
             setBinding: function (name, options) {
                 this.clearBinding(name);
-                var binding = this.__bindings__[name] = new Binding(this, name, options);
-                binding.set('source', this.get('model'));
+                options.source = this.get('model');
+                options.owner = options.owner || this;
+                this.__bindings__[name] = new Binding(this, name, options);
             },
             clearBinding: function (name) {
                 var binding = this.__bindings__[name];
@@ -230,6 +280,16 @@
                     binding.dispose();
                     delete this.__bindings__[name];
                 }
+            },
+            __binding: function (){
+                var _self = this,
+                    _properties = this.constructor.getMeta('properties');
+
+                zn.each(_properties, function (value, key){
+                    if(value && value.binding){
+                        _self.let(key, value.binding);
+                    }
+                });
             }
         }
     });

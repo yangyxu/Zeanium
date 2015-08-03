@@ -780,12 +780,27 @@
                         throw new Error('Cannot instantiate abstract class.');
                     } :
                     function () {
-
                         var _mixins = ZNClass._mixins_||[];
                         this.__id__ = __id__++;
                         this.__handlers__ = {};
                         this.__initializing__ = true;
+                        this.__afters__ = [];
 
+                        (function (__super__, __context__){
+                            if(__super__ && __super__ !== ZNObject){
+                                var _superCtor = __super__.member('init');
+                                if(_superCtor && _superCtor.meta.after){
+                                    __context__.__afters__.push({
+                                        context: __context__,
+                                        handler: _superCtor.meta.after
+                                    });
+                                }
+                                if(_superCtor && _superCtor.meta.auto){
+                                    _superCtor.meta.value.apply(__context__, arguments);
+                                }
+                                return arguments.callee(__super__._super_, __context__);
+                            }
+                        })(this.__super__, this);
 
                         for (var i = 0, _len = _mixins.length; i < _len; i++) {
                             var _ctor = _mixins[i].prototype.__ctor__;
@@ -798,15 +813,14 @@
                             this.__ctor__.apply(this, arguments);
                         }
 
-                        (function (__super__, __context__){
-                            if(__super__ && __super__ !== ZNObject){
-                                var _superCtor = __super__.member('init');
-                                if(_superCtor && _superCtor.meta.auto){
-                                    _superCtor.meta.value.apply(__context__, arguments);
-                                }
-                                arguments.callee(__super__._super, __context__);
-                            }
-                        })(this.__super__, this);
+                        while(this.__afters__.length>0){
+                            var _after = this.__afters__.pop();
+                            _after.handler.call(_after.context);
+                        }
+
+                        this.__afters__ = null;
+                        delete this.__afters__;
+
 
                         this.__initializing__ = false;
                     };

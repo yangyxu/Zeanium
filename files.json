@@ -12,7 +12,8 @@
         "src/unit/TestLoader.js",
         "src/data/List.js",
         "src/data/Task.js",
-        "src/data/Observable.js"
+        "src/data/Observable.js",
+        "src/data/Bindable.js"
     ],
     "data": [
 
