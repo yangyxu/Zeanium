@@ -256,9 +256,10 @@
                 });
                 this.__bindings__ = null;
             },
-            let: function (name, value) {
+            let: function (name, value, owner) {
                 var _binding = Bindable.parseOptions(value);
                 if (_binding) {
+                    _binding.owner = owner;
                     this.setBinding(name, _binding);
                 }
                 else {
