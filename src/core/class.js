@@ -725,6 +725,22 @@
         }
     };
 
+    var __execSuperCtor = function (__super__, __context__, __arguments__){
+        if(__super__ && __super__ !== ZNObject){
+            var _superCtor = __super__.member('init');
+            if(_superCtor && _superCtor.meta.after){
+                __context__.__afters__.push({
+                    context: __context__,
+                    handler: _superCtor.meta.after
+                });
+            }
+            if(_superCtor && _superCtor.meta.auto){
+                _superCtor.meta.value.apply(__context__, __arguments__);
+            }
+            return arguments.callee(__super__._super_, __context__);
+        }
+    };
+
     /**
      * Define a class
      * @method define
@@ -737,7 +753,9 @@
         var _args = __class._arguments.apply(this, arguments);
         var _name = _args.name,
             _super = _args.super,
-            _meta = _args.meta;
+            _meta = _args.meta,
+            _init = _meta.methods.init;
+
         var ZNClass, _SuperClass, _prototype;
 
         if (_super._static_) {
@@ -780,42 +798,42 @@
                         throw new Error('Cannot instantiate abstract class.');
                     } :
                     function () {
-                        var _mixins = ZNClass._mixins_||[];
+                        var _mixins = ZNClass._mixins_ || [],
+                            _ctors = ZNClass._ctors_ || [],
+                            _ctor_ = null,
+                            _arguments = arguments;
+
                         this.__id__ = __id__++;
                         this.__handlers__ = {};
                         this.__initializing__ = true;
                         this.__afters__ = [];
 
-                        (function (__super__, __context__){
-                            if(__super__ && __super__ !== ZNObject){
-                                var _superCtor = __super__.member('init');
-                                if(_superCtor && _superCtor.meta.after){
-                                    __context__.__afters__.push({
-                                        context: __context__,
-                                        handler: _superCtor.meta.after
-                                    });
-                                }
-                                if(_superCtor && _superCtor.meta.auto){
-                                    _superCtor.meta.value.apply(__context__, arguments);
-                                }
-                                return arguments.callee(__super__._super_, __context__);
-                            }
-                        })(this.__super__, this);
+                        var _mixinPrototype = null,
+                            _ctor = null;
 
                         for (var i = 0, _len = _mixins.length; i < _len; i++) {
-                            var _ctor = _mixins[i].prototype.__ctor__;
+                            _mixinPrototype = _mixins[i].prototype;
+                            _ctor = _mixinPrototype.__ctor__;
+                            _ctor = zn.is(_ctor, 'function') ? _ctor : _ctor.value;
+                            __execSuperCtor(_mixinPrototype.__super__, _mixinPrototype, _arguments);
                             if (_ctor) {
                                 _ctor.call(this);
                             }
                         }
 
-                        if (this.__ctor__) {
-                            this.__ctor__.apply(this, arguments);
+                        __execSuperCtor(this.__super__, this, _arguments);
+
+                        for (var j = 0, _ctorLen = _ctors.length; j < _ctorLen; j++) {
+                            _ctor_ = _ctors[j];
+                            _ctor_ = zn.is(_ctor_, 'function') ? _ctor_ : _ctor_.value;
+                            if (_ctor_) {
+                                _ctor_.apply(this, _arguments);
+                            }
                         }
 
                         while(this.__afters__.length>0){
                             var _after = this.__afters__.pop();
-                            _after.handler.call(_after.context);
+                            _after.handler.apply(_after.context, _arguments);
                         }
 
                         this.__afters__ = null;
@@ -824,6 +842,8 @@
 
                         this.__initializing__ = false;
                     };
+
+                ZNClass._ctors_ = [];
             }
 
             if (ZNClass._super_ !== _super) {
@@ -840,8 +860,11 @@
                 _prototype = ZNClass.prototype;
             }
 
-            if (_meta.methods.init) {
-                _prototype.__ctor__ = _meta.methods.init;
+            if (_init) {
+                ZNClass._ctors_.push(_init);
+                if(!_prototype.__ctor__){
+                    _prototype.__ctor__ = _init;
+                }
             }
 
         }
