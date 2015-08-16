@@ -190,6 +190,7 @@
 
     var sharedMethods = {
         __handlers__: {},
+
         /**
          * Get specified member.
          * @param name
@@ -622,7 +623,7 @@
                 if (zn.is(_args0, 'string')) {
                     _name = _args0;
                     _super = null;
-                } else if (zn.is(arg0, 'function')) {
+                } else if (zn.is(_args0, 'function')) {
                     _name = null;
                     _super = _args0;
                 } else {
@@ -727,16 +728,34 @@
 
     var __execSuperCtor = function (__super__, __context__, __arguments__){
         if(__super__ && __super__ !== ZNObject){
-            var _superCtor = __super__.member('init');
+            var _superCtor = __super__.member('init'),
+                _mixins = __super__._mixins_,
+                _mixinCtor = null;
+
             if(_superCtor && _superCtor.meta.after){
                 __context__.__afters__.push({
                     context: __context__,
                     handler: _superCtor.meta.after
                 });
             }
+
+            if(_mixins.length){
+                zn.each(_mixins, function (mixin){
+                    if(mixin['@init']){
+                        _mixinCtor = mixin['@init'].meta;
+                        _mixinCtor = zn.is(_mixinCtor, 'function') ? _mixinCtor : _mixinCtor.value;
+                        //__execSuperCtor(mixin.prototype.__super__, mixin.prototype, __arguments__);
+                        if (_mixinCtor) {
+                            _mixinCtor.call(__context__);
+                        }
+                    }
+                });
+            }
+
             if(_superCtor && _superCtor.meta.auto){
                 _superCtor.meta.value.apply(__context__, __arguments__);
             }
+
             return arguments.callee(__super__._super_, __context__);
         }
     };
@@ -808,16 +827,20 @@
                         this.__initializing__ = true;
                         this.__afters__ = [];
 
-                        var _mixinPrototype = null,
+                        var _mixin = null,
                             _ctor = null;
 
                         for (var i = 0, _len = _mixins.length; i < _len; i++) {
-                            _mixinPrototype = _mixins[i].prototype;
-                            _ctor = _mixinPrototype.__ctor__;
-                            _ctor = zn.is(_ctor, 'function') ? _ctor : _ctor.value;
-                            __execSuperCtor(_mixinPrototype.__super__, _mixinPrototype, _arguments);
-                            if (_ctor) {
-                                _ctor.call(this);
+                            _mixin = _mixins[i];
+                            if(_mixin['@init']){
+                                _ctor = _mixin['@init'].meta;
+                                _ctor = zn.is(_ctor, 'function') ? _ctor : _ctor.value;
+                                __execSuperCtor(_mixin.prototype.__super__, this, _arguments);
+                                if (_ctor) {
+                                    _ctor.call(this);
+                                }
+                            }else {
+                                __execSuperCtor(_mixin.prototype.__super__, this, _arguments);
                             }
                         }
 

@@ -28,7 +28,7 @@
             },
             watch: function (path, handler, context){
                 var _paths = path === '*' ?
-                    this.constructor.__properties__ :
+                    this.constructor._properties_ :
                     (zn.is(path, 'array') ? path : [ path ]);
 
                 _paths.forEach(function (_path){
@@ -39,7 +39,7 @@
             },
             unwatch: function (path, handler, context){
                 var _paths = path === '*' ?
-                    this.constructor.__properties__ :
+                    this.constructor._properties_ :
                     (zn.is(path, 'array') ? path : [ path ]);
 
                 _paths.forEach(function (_path){

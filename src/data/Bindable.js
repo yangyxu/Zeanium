@@ -103,6 +103,7 @@
                     _value = null,
                     _owner = this._owner,
                     _target = this._target,
+                    _targetPathValue = null,
                     _targetPath = this._targetPath,
                     _converter = this._converter;
 
@@ -112,7 +113,9 @@
                     _values.push(_value);
                 });
 
-                return _target.set(_targetPath, _converter.convert.apply(_converter.context, _values)), this;
+                _targetPathValue = _converter.convert.apply(_converter.context, _values);
+
+                return _target.set(_targetPath, _targetPathValue), this;
             },
             __rebind: function () {
                 var _sourcePaths = this._sourcePaths,
@@ -256,11 +259,11 @@
                 });
                 this.__bindings__ = null;
             },
-            let: function (name, value, owner) {
+            let: function (name, value, owner, target) {
                 var _binding = Bindable.parseOptions(value);
                 if (_binding) {
                     _binding.owner = owner;
-                    this.setBinding(name, _binding);
+                    this.setBinding(name, _binding, target);
                 }
                 else {
                     this.set(name, value);
@@ -269,11 +272,12 @@
             getBinding: function (name) {
                 return this.__bindings__[name];
             },
-            setBinding: function (name, options) {
-                this.clearBinding(name);
-                options.source = this.get('model');
+            setBinding: function (name, options, target) {
+                options.source = options.model || this.get('model');
                 options.owner = options.owner || this;
-                this.__bindings__[name] = new Binding(this, name, options);
+                this.clearBinding(name);
+                this.__bindings__[name] = new Binding(target || this, options.targetPath || name, options);
+                return this;
             },
             clearBinding: function (name) {
                 var binding = this.__bindings__[name];
