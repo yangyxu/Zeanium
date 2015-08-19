@@ -1,5 +1,9 @@
-/**
- * Created by yangyxu on 6/29/15.
- */
-var zn = require('../../dest/js/zn.js');
-console.log(zn);
+var zn = require('../../dest/js/zn');
+
+zn.define([
+    'net',
+    'node:os',
+    './hs_config'
+], function (net, os, hs_config) {
+
+}).exec();

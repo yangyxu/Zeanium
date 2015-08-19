@@ -4,12 +4,61 @@
 var zn = {
     VERSION: '0.0.1',
     DEBUG: false,
+    ZN_PATH: '',
+    PATH: '',
     GLOBAL: (function () { return this; }).call(null)
 };
 
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = zn;
-    zn.ZN_Path = __dirname;
+    zn.ZN_PATH = __dirname;
+    zn.PATH = process.cwd();
+}else{
+    var _zn_url = '';
+    try{
+        __a__ = __b__;
+    }
+    catch(e){
+        if(e.fileName){   //firefox
+            _zn_url = e.fileName;
+        }
+        else if(e.sourceURL){  //safair
+            _zn_url = e.sourceURL;
+        }
+        else if(e.stacktrace){  //opera
+            console.log(e.stacktrace);
+        }
+        else if(e.stack){  //chrome
+            _zn_url = e.stack.split('\n')[1];
+            _zn_url = _zn_url.replace(/\s/g,"");
+            _zn_url = _zn_url.substring(2, _zn_url.length);
+        }
+        else {
+            console.log(e.toString());
+        }
+    }
+    if(!_zn_url){
+        var _scripts = document.getElementsByTagName("script"),
+            _src = '',
+            _node;
+
+        for(var i = 0 , _len = scripts.length; i < _len; i++){
+            _node = scripts[i];
+            if(_node.getAttribute){
+                _src = _node.getAttribute('src') || '';
+                if (_src.slice(-5) === 'zn.js'||_src.slice(-10) === 'zn.minx.js') {
+                    _zn_url = _src;
+                    break;
+                }
+            }
+        }
+    }
+
+    if(_zn_url){
+        zn.ZN_PATH = _zn_url.substring(0, _zn_url.lastIndexOf('/') + 1);
+    }else {
+        throw new Error('zn.js has not been included, please do it first.');
+    }
 }
 
 zn.GLOBAL.zn = zn;  //set global zn var
