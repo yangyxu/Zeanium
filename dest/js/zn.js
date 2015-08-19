@@ -1479,7 +1479,12 @@ zn.GLOBAL.zn = zn;  //set global zn var
             WAITING: 2,
             LOADED: 3
         };
+
     var _doc = zn.GLOBAL.document;
+
+    if(!_doc){
+        zn.SLASH = SLASH = require('path').sep;
+    }
 
     var __path = {
         normalizePath: function (path){
@@ -1511,8 +1516,14 @@ zn.GLOBAL.zn = zn;  //set global zn var
             return _values.join(SLASH);
         },
         formatPath: function (path, parent){
-            var _path = path,
-                _parentPath = parent ? (parent.get('path')||zn.PATH): zn.PATH,
+            var _path = path;
+            if(SLASH === '/') {
+                _path = _path.split('\\').join(SLASH);
+            }else {
+                _path = _path.split('/').join(SLASH);
+            }
+
+            var _parentPath = parent ? (parent.get('path')||zn.PATH): zn.PATH,
                 _slashIndex = _path.indexOf(SLASH);
 
             if(_path.indexOf(zn.PATH) > -1 || _path.indexOf(zn.ZN_PATH) > -1){
@@ -1526,10 +1537,10 @@ zn.GLOBAL.zn = zn;  //set global zn var
                 _path = zn.PATH.substring(0, zn.PATH.lastIndexOf(SLASH)) + _path;
             }
             else {
-                _path = zn.ZN_PATH + '/' + _path+'/';
+                _path = zn.ZN_PATH + SLASH + _path + SLASH;
             }
 
-            if(_path.slice(-1) === '/'){
+            if(_path.slice(-1) === SLASH){
                 _path += 'index.js';
             }
 
@@ -1619,7 +1630,7 @@ zn.GLOBAL.zn = zn;  //set global zn var
                     _callback(err);
                 };
 
-                _path = _path.slice(-1) === '/' ? _path + 'index.js' : _path;
+                _path = _path.slice(-1) === SLASH ? _path + 'index.js' : _path;
                 _path = _path.slice(-3).toLowerCase() === '.js' ? _path : _path + '.js';
                 _script.src = _path;
                 //_script.async = false;
