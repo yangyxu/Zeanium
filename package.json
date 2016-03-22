@@ -25,5 +25,9 @@
         "url": "https://github.com/yangyxu/Zeanium/issues"
     },
     "homepage": "https://github.com/yangyxu/Zeanium#readme",
-    "license": "MIT"
+    "license": "MIT",
+    "devDependencies": {
+        "grunt": "~0.4.1",
+        "grunt-contrib": "~0.7.0"
+    }
 }
