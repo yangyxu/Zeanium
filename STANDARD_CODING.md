@@ -5,10 +5,10 @@ Zeanium代码规范
 1. 框架(Framework)
 
     For example(zeanium):
-    
+
 >    
     |--zeanium
-      |--dest(Automatic generation)
+      |--lib(Automatic generation)
         |--js
         |--css
       |--src
@@ -28,7 +28,7 @@ Zeanium代码规范
 2. 项目(Project)
 
     For example(zn-cms):
-   
+
 >
     |--zn-cms
       |--dest(Automatic generation)
@@ -48,7 +48,7 @@ Zeanium代码规范
       |--files.json
       |--Gruntfile.js
       |--README.md
-      
+
 
 
 # 文件名
@@ -58,7 +58,7 @@ Zeanium代码规范
         1). 专门用于配置App的可配置信息，文件名全小写。如：`config.js`
         2). 如只是静态数据信息，最好直接配置成原生Json或者Array对象，为了提升性能，
         减少创建Class性能和消耗，除非有对某个属性有明确的get, set区别, 可以使用静态类。
-        
+
 3. 数据文件：App中提供的静态数据源，文件名全小写。如：`data.json`
 
 # 语法

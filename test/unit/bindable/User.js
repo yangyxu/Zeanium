@@ -2,7 +2,9 @@
 
     var User = zn.class('zn.model.User', zn.data.Bindable, {
         properties: {
-            firstName: '',
+            firstName: {
+                $count: 0
+            },
             lastName: '',
             fullName: {
                 binding: {

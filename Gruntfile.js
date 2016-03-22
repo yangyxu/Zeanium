@@ -21,17 +21,17 @@ module.exports = function (grunt) {
         concat: {
             core: {
                 src: '<%= pkg.core %>',
-                dest: 'dest/js/zn.js'
+                dest: 'lib/zn.js'
             },
             data: {
                 src: '<%= pkg.data %>',
-                dest: 'dest/js/zn-data.js'
+                dest: 'lib/zn-data.js'
             }
         },
         uglify: {
             core: {
-                src: ['dest/js/zn.js'],
-                dest: 'dest/js/zn.minx.js',
+                src: ['lib/zn.js'],
+                dest: 'lib/zn.minx.js',
                 options: {
                     beautify: {
                         ascii_only: true
@@ -39,8 +39,8 @@ module.exports = function (grunt) {
                 }
             },
             data: {
-                src: ['dest/js/zn-data.js'],
-                dest: 'dest/js/zn-data.minx.js',
+                src: ['lib/zn-data.js'],
+                dest: 'lib/zn-data.minx.js',
                 options: {
                     beautify: {
                         ascii_only: true
