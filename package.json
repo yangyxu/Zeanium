@@ -29,10 +29,5 @@
     "devDependencies": {
         "grunt": "~0.4.1",
         "grunt-contrib": "~0.7.0"
-    },
-    "dependencies": {
-        "formidable": "^1.0.15",
-        "mysql": "^2.5.0",
-        "websocket": "^1.0.8"
     }
 }
