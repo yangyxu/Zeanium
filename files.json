@@ -21,6 +21,14 @@
         "src/data/ObservableMap.js"
     ],
     "data": [
-
+        "src/data/List.js",
+        "src/data/TList.js",
+        "src/data/Task.js",
+        "src/data/Observable.js",
+        "src/data/Bindable.js",
+        "src/data/List.js",
+        "src/data/Map.js",
+        "src/data/ObservableList.js",
+        "src/data/ObservableMap.js"
     ]
 }
