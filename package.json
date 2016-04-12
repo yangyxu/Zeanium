@@ -1,6 +1,6 @@
 {
     "name": "zeanium",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Javascript framework for Node.js and Browser. Simple MVVM model in data and view module.",
     "main": "index.js",
     "directories": {
@@ -11,23 +11,23 @@
         "build": "grunt --force"
     },
     "author": "yangyxu",
+    "email": "945758912@qq.com",
     "repository": {
         "type": "git",
         "url": "https://github.com/yangyxu/Zeanium.git"
     },
     "keywords": [
+        "JavaScript",
         "OOP",
         "Node.js",
         "MVVM",
+        "Model",
+        "Class",
         "Framework"
     ],
     "bugs": {
         "url": "https://github.com/yangyxu/Zeanium/issues"
     },
     "homepage": "https://github.com/yangyxu/Zeanium#readme",
-    "license": "MIT",
-    "devDependencies": {
-        "grunt": "~0.4.1",
-        "grunt-contrib": "~0.7.0"
-    }
+    "license": "MIT"
 }

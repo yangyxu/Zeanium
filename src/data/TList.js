@@ -19,8 +19,8 @@
         properties: {
             min: 0,
             max: 100,
-            T: null,
-            TArgs: {}
+            TClass: null,
+            TClassArgv: {}
         },
         methods: {
             init: function (inArgs) {
@@ -30,12 +30,12 @@
             reset: function (){
                 this._data = [];
                 for(var i= 0; i < (this.min||0); i++){
-                    this.push(this.TArgs);
+                    this.push(this.TClassArgv);
                 }
             },
             push: function (tArgs){
-                if(this.T){
-                    var _t = new this.T(tArgs||this.TArgs);
+                if(this.TClass){
+                    var _t = new this.TClass(tArgs||this.TClassArgv);
                     return this._data.push(_t), _t;
                 }
             },

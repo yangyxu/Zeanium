@@ -680,7 +680,7 @@
                     _Class.defineEvent(event, {}, _Class);
                 });
 
-                zn.each(_meta.properties, function (value, key) {
+                zn.each(_meta.properties || _meta.props, function (value, key) {
                     _Class.defineProperty(key, zn.is(value, 'object') ? value : { value: value }, _Class);
                 });
 

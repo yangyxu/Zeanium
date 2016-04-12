@@ -203,6 +203,6 @@
         }
     });
 
-    zn.async = Async;
+    zn.GLOBAL.async = zn.async = Async;
 
 })(zn);

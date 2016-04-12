@@ -4,7 +4,7 @@ module.exports = function (grunt) {
         pkg: grunt.file.readJSON('files.json'),
         clean: {
             all: {
-                src: ['dest']
+                src: ['lib']
             }
         },
         jshint: {
