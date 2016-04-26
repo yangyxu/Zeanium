@@ -4,7 +4,7 @@ module.exports = function (grunt) {
         pkg: grunt.file.readJSON('files.json'),
         clean: {
             all: {
-                src: ['lib']
+                src: ['dist']
             }
         },
         jshint: {
@@ -21,17 +21,17 @@ module.exports = function (grunt) {
         concat: {
             core: {
                 src: '<%= pkg.core %>',
-                dest: 'lib/zn.js'
+                dest: 'dist/zn.js'
             },
             data: {
                 src: '<%= pkg.data %>',
-                dest: 'lib/zn-data.js'
+                dest: 'dist/zn-data.js'
             }
         },
         uglify: {
             core: {
-                src: ['lib/zn.js'],
-                dest: 'lib/zn.minx.js',
+                src: ['dist/zn.js'],
+                dest: 'dist/zn.minx.js',
                 options: {
                     beautify: {
                         ascii_only: true
@@ -39,8 +39,8 @@ module.exports = function (grunt) {
                 }
             },
             data: {
-                src: ['lib/zn-data.js'],
-                dest: 'lib/zn-data.minx.js',
+                src: ['dist/zn-data.js'],
+                dest: 'dist/zn-data.minx.js',
                 options: {
                     beautify: {
                         ascii_only: true

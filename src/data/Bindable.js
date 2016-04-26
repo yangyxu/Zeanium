@@ -4,7 +4,7 @@
  */
 (function (zn){
 
-    var Binding = zn.class({
+    var Binding = zn.Class({
         properties: {
             direction: {
                 value: 'oneway',
@@ -202,7 +202,7 @@
      * @type {Function}
      * @return {Function}
      */
-    var Bindable = zn.class('zn.data.Bindable', zn.data.Observable, {
+    var Bindable = zn.Class('zn.data.Bindable', zn.data.Observable, {
         statics: {
             parseOptions: function (value, owner) {
                 var _value = null;

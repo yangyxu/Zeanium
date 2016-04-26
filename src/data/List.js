@@ -26,7 +26,7 @@
             }
         };
 
-    var List = zn.class('zn.data.List', {
+    var List = zn.Class('zn.data.List', {
         properties: {
             /**
              * @property count

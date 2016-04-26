@@ -9,7 +9,7 @@
      * @namespace zn.data
      **/
 
-    var Observable = zn.class('zn.data.Observable', {
+    var Observable = zn.Class('zn.data.Observable', {
         properties: {
 
         },

@@ -1,6 +1,6 @@
 (function (zn) {
 
-    var Map = zn.class('zn.data.Map', {
+    var Map = zn.Class('zn.data.Map', {
         properties: {
             /**
              * @property length

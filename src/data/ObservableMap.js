@@ -1,6 +1,6 @@
 (function (zn) {
 
-    zn.class('zn.data.ObservableMap', zn.data.Map, {
+    zn.Class('zn.data.ObservableMap', zn.data.Map, {
         mixins: [ zn.data.Observable ],
         events: [ 'change' ],
         methods: {

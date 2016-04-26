@@ -16,7 +16,7 @@
         REJECTED: 2
     };
 
-    var Async = zn.class('zn.util.Async', {
+    var Async = zn.Class({
         static: true,
         methods: {
             init: function (inArgs) {
@@ -86,7 +86,7 @@
     });
 
 
-    var Defer = zn.class('Defer', {
+    var Defer = zn.Class({
         events: ['complete'],
         properties: {
             promise: null
@@ -137,7 +137,7 @@
         }
     });
 
-    var Promise = zn.class('Promise', {
+    var Promise = zn.Class({
         statics: {
             isPromise: function (obj) {
                 return obj !== null && obj !== undefined && typeof obj.then === 'function';

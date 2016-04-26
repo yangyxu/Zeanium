@@ -5,7 +5,7 @@
      * @namespace zn.unit
      * @type {Function}
      */
-    var TestCase = zn.class('zn.unit.TestCase',{
+    var TestCase = zn.Class('zn.unit.TestCase',{
         properties: {
 
         },

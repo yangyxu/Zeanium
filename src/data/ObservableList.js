@@ -1,6 +1,6 @@
 (function (zn) {
 
-    zn.class('zn.data.ObservableList', zn.data.List, {
+    zn.Class('zn.data.ObservableList', zn.data.List, {
         mixins: [ zn.data.Observable ],
         events: ['change'],
         methods: {

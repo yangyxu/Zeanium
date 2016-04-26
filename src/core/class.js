@@ -905,7 +905,6 @@
         return ZNClass;
     }
 
-    zn.class = define;
-
+    zn.Class = define;
 
 })(zn);

@@ -83,7 +83,7 @@
         }
     };
 
-    var Module = zn.class('zn.Module', {
+    var Module = zn.Class('zn.Module', {
         events: [
             'pending',
             'loading',
@@ -357,7 +357,7 @@
         return Module.current = new Module('', _deps, _factory), Module.current;
     };
 
-    var Loader = zn.class('zn.Loader', {
+    var Loader = zn.Class('zn.Loader', {
         static: true,
         properties: {
             preLoadPackages: []

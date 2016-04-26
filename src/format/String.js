@@ -10,7 +10,7 @@
      * @class String
      * @namespace zn.format
      **/
-    var StringFormatter = zn.class('zn.format.String', {
+    var StringFormatter = zn.Class('zn.format.String', {
         static: true,
         properties: {
 

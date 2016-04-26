@@ -1,6 +1,6 @@
 (function (zn){
 
-    var TestLoader = zn.class('zn.unit.TestLoader',{
+    var TestLoader = zn.Class('zn.unit.TestLoader',{
         static: true,
         properties: {
             basePath: ''

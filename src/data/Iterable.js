@@ -1,6 +1,6 @@
 (function (zn) {
 
-    zn.class('zn.data.Iterable', {
+    zn.Class('zn.data.Iterable', {
         methods: {
             init: function (iter) {
 

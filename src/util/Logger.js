@@ -15,7 +15,7 @@
      * @class Date
      * @namespace zn.util
      **/
-    var DateUtil = zn.class('zn.util.DateUtil', {
+    var DateUtil = zn.Class('zn.util.DateUtil', {
         static: true,
         properties: {
 
@@ -94,7 +94,7 @@
      * @class Logger
      * @namespace zn.util
      **/
-    var Logger = zn.class('Logger', {
+    var Logger = zn.Class({
         static: true,
         properties: {
 

@@ -10,7 +10,7 @@
      * @namespace zn.util
      **/
 
-    zn.class('zn.data.Task', {
+    zn.Class('zn.data.Task', {
         statics: {
             getInstance: function (args){
                 return new this(args);

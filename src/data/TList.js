@@ -10,7 +10,7 @@
      * @namespace zn.util
      **/
 
-    zn.class('zn.data.TList', {
+    zn.Class('zn.data.TList', {
         statics: {
             getInstance: function (args){
                 return new this(args);

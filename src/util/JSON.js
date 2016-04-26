@@ -5,7 +5,7 @@
      * @class JSON
      * @namespace zn.util
      */
-    zn.class('zn.util.JSON', {
+    zn.JSON = zn.Class({
         static: true,
         properties: {
             charMaps: {
@@ -120,5 +120,9 @@
             }
         }
     });
+
+    if(!zn.GLOBAL.JSON){
+        zn.GLOBAL.JSON = zn.JSON;
+    }
 
 })(zn);
