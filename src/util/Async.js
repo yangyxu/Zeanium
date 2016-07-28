@@ -4,6 +4,10 @@
  */
 (function (zn){
 
+    var __slice = Array.prototype.slice;
+
+    //__slice.call(arguments);
+
     /**
      * Promise: Promise
      * @class Async
@@ -27,36 +31,37 @@
                 this._dataArray = [];
             },
             exception: function (onException){
-                this._exceptions.push(onException);
-                return this;
+                return this._exceptions.push(onException), this;
             },
             catch: function (ex, context){
                 zn.each(this._exceptions, function (exception){
                     exception.call(context, ex);
                 });
+
                 return this;
             },
             finally: function (onFinally){
-                this._finallys.push(onFinally);
-                return this;
+                return this._finallys.push(onFinally), this;
             },
             defer: function (resolve, reject) {
-                var _self = this, _defer = new Defer(resolve, reject);
+                var _self = this,
+                    _defer = new Defer(resolve, reject);
                 _defer.on('complete', function (sender, data){
                     _self._currIndex++;
                     _self._dataArray.push(data);
                     if(_self._currIndex==_self._count){
                         zn.each(_self._finallys, function (_finally){
-                            try{
+                            try {
                                 _finally(_self._dataArray);
-                            }catch(e){
-                                console.log(e.message);
+                            } catch(e) {
+                                zn.error(e.message);
                             }
                         });
                         _self._finallys = [];
                     }
                 });
                 _self._count++;
+
                 return _defer;
             },
             all: function (promises) {
@@ -101,24 +106,26 @@
                     this.reject(reject);
                 }
             },
-            resolve: function (data) {
-                try{
-                    var _promise = this.get('promise');
+            resolve: function () {
+                var data = __slice.call(arguments);
+                try {
+                    var _promise = this.get('promise'), _self = this;
                     if (_promise.get('readyState') != PROMISE_STATE.PENDING){
                         return;
                     }
                     _promise.set('readyState', PROMISE_STATE.FULFILLED);
                     _promise.set('data', data);
                     zn.each(_promise.get('resolves'), function (handler){
-                        handler(data);
+                        handler.apply(_self, data);
                     });
-                }catch(ex){
+                } catch(ex) {
                     Async.catch(ex, this);
                 }
                 this.fire('complete', data);
             },
-            reject: function (reason) {
-                try{
+            reject: function () {
+                var reason = __slice.call(arguments);
+                try {
                     var _promise = this.get('promise');
                     if (_promise.get('readyState') != PROMISE_STATE.PENDING){
                         return;
@@ -127,9 +134,9 @@
                     _promise.set('reason', reason);
                     var _handler = _promise.get('rejects')[0];
                     if (_handler){
-                        _handler(reason);
+                        _handler.apply(this, reason);
                     }
-                }catch(ex){
+                } catch(ex) {
                     Async.catch(ex, this);
                 }
                 this.fire('complete', reason);
@@ -160,15 +167,18 @@
             },
             then: function (onFulfilled, onRejected) {
                 var deferred = new Defer();
-                function fulfill(data){
-                    var _return = onFulfilled?onFulfilled(data):data;
-                    if(Promise.isPromise(_return)){
-                        _return.then(function (data){
-                            deferred.resolve(data);
+                function fulfill(){
+                    var _data = __slice.call(arguments);
+                    var _return = onFulfilled ? onFulfilled.apply(this, _data) : _data;
+
+                    if (Promise.isPromise(_return)){
+                        _return.then(function (){
+                            deferred.resolve.apply(deferred, __slice.call(arguments));
                         });
-                    }else {
-                        deferred.resolve(_return);
+                    } else {
+                        deferred.resolve.apply(deferred, _return);
                     }
+
                     return _return;
                 }
 
@@ -177,14 +187,15 @@
                     if(onRejected){
                         this.get('rejects').push(onRejected);
                     }else {
-                        this.get('rejects').push(function (reason) {
-                            deferred.reject(reason);
+                        this.get('rejects').push(function () {
+                            deferred.reject.apply(deferred, __slice.call(arguments));
                         });
                     }
                 }else if (this.get('readyState')===PROMISE_STATE.FULFILLED) {
                     var _self = this;
                     setTimeout(function (){
-                        fulfill(_self.get('data'));
+                        //fulfill.call();
+                        fulfill.apply(_self, _self.get('data'));
                     });
                 }
 

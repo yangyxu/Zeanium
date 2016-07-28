@@ -7,7 +7,20 @@
         __hasOwnProperty = Object.prototype.hasOwnProperty,
         __toString = Object.prototype.toString;
 
+    var __fixStringPrototype__ = {
+        format: function (){
+            var _argv = arguments, _self = this;
+            if(_argv.length == 1 && typeof _argv[0] == 'object'){
+                _argv = _argv[0];
+            }
+            zn.each(_argv, function (value, index){
+                value = (zn.type(value)=='object'?JSON.stringify(value):value.toString());
+                _self = _self.replace(new RegExp('\\{'+index+'\\}', 'gi'), value);
+            });
 
+            return _self.toString();
+        }
+    };
 
     var __fixArray__ = {
         isArray: function (target){
@@ -29,6 +42,7 @@
 
             return this;
         },
+        /*
         toJSON: function (){
             var _data = {};
             for(var i= 0, _len = this.length; i < _len; i++){
@@ -36,7 +50,7 @@
             }
 
             return _data;
-        },
+        },*/
         indexOf: function (item){
             for(var i= 0, _len = this.length; i < _len; i++){
                 if (this[i] === item){
@@ -179,8 +193,10 @@
     zn.fix(Array.prototype, __fixArrayPrototype__);
     zn.fix(Function.prototype, __fixFunction__);
     //zn.fix(Object, __fixObject__);
-    zn.fix(zn.GLOBAL.JSON, __fixJSON__);
+    //zn.fix(zn.GLOBAL.JSON, __fixJSON__);
+    zn.fix(String.prototype, __fixStringPrototype__);
 
+    /*
     try {
         Object.defineProperty({}, 'zn', {});
     }
@@ -188,6 +204,6 @@
         Object.defineProperty = function (obj, property, descriptor) {
             return __fixObject__.defineProperty(obj, property, descriptor);
         };
-    }
+    }*/
 
 })(zn);

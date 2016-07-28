@@ -5,20 +5,11 @@
         "src/core/fix.js",
         "src/core/class.js",
         "src/core/require.js",
-        "src/format/String.js",
-        "src/util/Async.js",
+        "src/util/Queue.js",
         "src/util/Logger.js",
+        "src/util/Async.js",
         "src/unit/TestCase.js",
-        "src/unit/TestLoader.js",
-        "src/data/List.js",
-        "src/data/TList.js",
-        "src/data/Task.js",
-        "src/data/Observable.js",
-        "src/data/Bindable.js",
-        "src/data/List.js",
-        "src/data/Map.js",
-        "src/data/ObservableList.js",
-        "src/data/ObservableMap.js"
+        "src/unit/TestLoader.js"
     ],
     "data": [
         "src/data/List.js",

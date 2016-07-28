@@ -343,6 +343,29 @@
         toString: function (){
             return '{ ClassName: ' + (this._name_ || 'Anonymous') + ', ClassID: ' + this._id_ + ' }';
         },
+        getProperties: function (clazz, props){
+            var _props = props || {};
+            if(!clazz.getMeta || clazz._name_ == 'ZNObject') {
+                return _props;
+            }
+
+            zn.extend(_props, clazz.getMeta('properties'));
+
+            var _super = clazz._super_,
+                _mixins = clazz._mixins_;
+
+            if(_super){
+                zn.extend(_props, this.getProperties(_super));
+            }
+
+            if(_mixins && _mixins.length){
+                zn.each(_mixins, function (mixin){
+                    zn.extend(_props, this.getProperties(mixin));
+                }, this);
+            }
+
+            return _props;
+        },
         /**
          * Get the meta data of the class.
          * @param name
@@ -413,7 +436,24 @@
          * @returns {string}
          */
         toString: function (){
-            return '{ ClassName: ' + (this.__name__ || 'Anonymous') + ', InstanceID: ' + this.__id__ + ' }';
+            var _info = {
+                ClassName: (this.__name__ || 'Anonymous'),
+                InstanceID: this.__id__,
+                Meta: this.constructor._meta_
+            };
+            return JSON.stringify(_info);
+        },
+        /**
+         * Instance Object to json value.
+         * @returns {json}
+         */
+        toJson: function (){
+            var _json = {};
+            zn.each(this.constructor.getProperties(), function (field, key){
+                _json[key] = this.get(key);
+            }, this);
+
+            return _json;
         },
         /**
          * Add a single event handler.
@@ -499,13 +539,20 @@
          * @param [options] {Object}
          */
         fire: function (name, data, options) {
-            var _listeners = this.__handlers__[name], _listener;
+            var _listeners = this.__handlers__[name],
+                _listener,
+                _result = null;
             if (_listeners) {
                 for (var i = 0, length = _listeners.length; i < length; i++) {
                     _listener = _listeners[i];
                     if (_listener && _listener.handler) {
-                        if (false === _listener.handler.call(_listener.context || _listener.owner, _listener.owner, data, options)) {
-                            return false;
+                        if(options && options.method=='apply'){
+                            _result = _listener.handler.apply(_listener.context || _listener.owner, data);
+                        } else {
+                            _result = _listener.handler.call(_listener.context || _listener.owner, _listener.owner, data, options);
+                        }
+                        if (false === _result) {
+                            return this;
                         }
                     }
                 }
@@ -882,6 +929,8 @@
             } else {
                 _prototype = ZNClass.prototype;
             }
+
+            _prototype.class = _prototype.constructor;
 
             if (_init) {
                 ZNClass._ctors_.push(_init);

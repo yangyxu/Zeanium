@@ -125,6 +125,7 @@
                 try {
                     throw new Error();
                 } catch(e) {
+                    //console.log(e.stack);
                     var _pos = e.stack.split('\n')[4].replace(/\(/g, '').replace(/\)/g, '').split('/').pop();
                     return _pos;
                 }
@@ -137,6 +138,19 @@
                     _tag = COLORS[5]+'m';
                     color = COLORS[log.type]+'m';
                 }
+
+                return [
+                    log.time,
+                    ' [',
+                    _head,
+                    color,
+                    TYPES[log.type],
+                    _foot,
+                    '] ',
+                    log.message
+                ].join('');
+
+                /*
                 return [
                     log.time,
                     ' [',
@@ -152,14 +166,15 @@
                     '] ',
                     log.message
                 ].join('');
+                */
             },
             __formatLog4Client: function (log, color) {
                 return [
                     '%c'+log.time,
                     ' [',
                     TYPES[log.type],
-                    '] [',
-                    log.pos,
+                    //'] [', //'] [',
+                    //log.pos,
                     '] ',
                     log.message
                 ].join('');

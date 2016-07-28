@@ -95,6 +95,22 @@
             current: null,
             counter: 0,
             preLoadedPackage: {},
+            unloadModule: function (path){
+                var _path = require.resolve(path);
+                var module = require.cache[path];
+                // remove reference in module.parent
+                if (module && module.parent) {
+                    module.parent.children.splice(module.parent.children.indexOf(module), 1);
+                }
+                require.cache[path] = null;
+                var _module = Module.all[path];
+                if(_module&&_module.parent){
+                    Module.unloadModule(_module.parent.path);
+                }
+
+                Module.all[path] = null;
+                return this;
+            },
             loadModule: function (path, callback, parent){
                 if (zn.is(path, Module)){
                     return path.load(callback);
@@ -102,9 +118,13 @@
                 if (path.substring(0, 5) === 'node:') {
                     return callback(require(path.substring(5)));
                 }
-                var _path = __path.formatPath(path, parent),
-                    _module = Module.all[_path];
 
+                var _path = __path.formatPath(path, parent);
+                if(!_doc) {
+                    _path = require.resolve(_path);
+                }
+
+                var _module = Module.all[_path];
                 if (_module) {
                     _module.load(callback);
                 }
@@ -228,6 +248,7 @@
             __loading: function (callback){
                 var _path = this.get('path'),
                     _deps = this.get('dependencies'),
+                    _depHandler = this._depHandler,
                     _factory = this.get('factory'),
                     _value = this.get('value');
 
@@ -249,6 +270,9 @@
                     var _params = [],
                         _self = this;
                     zn.each(_deps, function (_dep, _index){
+                        if(_depHandler){
+                            _dep = _depHandler(_dep, _index);
+                        }
                         Module.loadModule(_dep, function (_param){
                             _params[_index] = _param;
                             _depLength--;
@@ -316,45 +340,52 @@
             _deps = [],
             _factory = null;
 
-        if (_len === 2) {
-            _deps = _arg0;
-            _factory = _args[1];
-        }
-        else if (_len === 1) {
-            if (zn.is(_arg0, 'function')) {
-                _factory = _arg0;
-            }
-            else if (zn.is(_arg0, 'array')) {
-                _deps = _arg0;
-                _factory = function () {
-                    var _values = {};
-                    zn.each(arguments, function (_module) {
-                        if (_module._name_) {
-                            _values[_module._name_] = _module;
-                        }
-                        else {
-                            zn.extend(_values, _module);
-                        }
-                    });
+        switch (_len) {
+            case 1:
+                if (zn.is(_arg0, 'function')) {
+                    _factory = _arg0;
+                } else if (zn.is(_arg0, 'array')) {
+                    _deps = _arg0;
+                    _factory = function () {
+                        var _values = {};
+                        zn.each(arguments, function (_module) {
+                            if (_module._name_) {
+                                _values[_module._name_] = _module;
+                            }
+                            else {
+                                zn.extend(_values, _module);
+                            }
+                        });
 
-                    return _values;
-                };
-            }
-            else {
-                _factory = function () {
-                    return _arg0;
-                };
-            }
-        }
-        else {
-            throw new Error('Invalid arguments.');
+                        return _values;
+                    };
+                } else {
+                    _factory = function () {
+                        return _arg0;
+                    };
+                }
+                break;
+            case 2:
+                _deps = _arg0;
+                _factory = _args[1];
+                break;
+            case 3:
+                _deps = _arg0;
+                _factory = _args[1];
+                break;
         }
 
         if(_deps && zn.is(_deps, 'string')){
             _deps = [_deps];
         }
 
-        return Module.current = new Module('', _deps, _factory), Module.current;
+        Module.current = new Module('', _deps, _factory);
+
+        if(_args[2]){
+            Module.current._depHandler = _args[2];
+        }
+
+        return Module.current;
     };
 
     var Loader = zn.Class('zn.Loader', {
@@ -381,5 +412,6 @@
     });
 
     zn.load = Loader.load;
+    zn.module = Module;
 
 })(zn);
