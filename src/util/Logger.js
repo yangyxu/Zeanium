@@ -186,7 +186,7 @@
                     time: this.__getDateString(),
                     pos: this.__getPosition()
                 };
-                if (!zn.GLOBAL.document){
+                if (typeof module !== 'undefined' && module.exports){
                     console.log(this.__formatLog4Server(_log, true));
                 }else {
                     console.log(this.__formatLog4Client(_log, true), 'color:'+COLORS_VALUE[type]);

@@ -1,4 +1,10 @@
 {
+    "base": [
+        "src/core/zn.js",
+        "src/core/builtin.js",
+        "src/core/fix.js",
+        "src/core/class.js"
+    ],
     "core": [
         "src/core/zn.js",
         "src/core/builtin.js",
@@ -8,8 +14,7 @@
         "src/util/Queue.js",
         "src/util/Logger.js",
         "src/util/Async.js",
-        "src/unit/TestCase.js",
-        "src/unit/TestLoader.js"
+        "src/util/Http.js"
     ],
     "data": [
         "src/data/List.js",

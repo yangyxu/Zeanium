@@ -1,5 +1,14 @@
 (function (zn) {
 
+    var MIME = {
+        text: 'text/plain; charset=UTF-8',
+        html: 'text/html; charset=UTF-8',
+        xml: 'text/xml; charset=UTF-8',
+        form: 'application/x-www-form-urlencoded; charset=UTF-8',
+        json: 'application/json; charset=UTF-8',
+        javascript: 'text/javascript; charset=UTF-8'
+    };
+
     var Task = zn.Class({
         events: [ 'init', 'start', 'stop', 'cancle', 'goNext', 'goPre' ],
         properties: {
@@ -62,12 +71,11 @@
         properties: {
             url: '',
             data: {
-                value: '',
                 set: function (value){
                     this._data = value;
                 },
                 get: function (){
-                    return zn.is(this._data,'object') ? JSON.stringify(this._data) : this._data;
+                    return zn.is(this._data, 'object') ? JSON.stringify(this._data) : this._data;
                 }
             },
             method: 'GET',
@@ -75,18 +83,24 @@
             username: null,
             password: null,
             headers: {
-                value: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-type': 'application/json'
-                },
                 get: function(){
-                    return this._headers;
+                    return zn.overwrite({
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-type': 'application/json'
+                    }, this._headers);
                 },
                 set: function (value){
                     this._headers = value;
                 }
             },
-            timeout: 2e4
+            timeout: {
+                get: function (){
+                    return this._timeout || 2e4;
+                },
+                set: function (value){
+                    this._timeout = value;
+                }
+            }
         },
         events: ['before', 'after', 'success', 'error', 'complete', 'timeout' ],
         methods: {
@@ -98,15 +112,15 @@
                 if (this._XMLHttpRequest){
                     return this._XMLHttpRequest;
                 }
-                if (!zn.GLOBAL.ActiveXObject){
-                    return this._XMLHttpRequest= new XMLHttpRequest();
+                if (!window.ActiveXObject){
+                    return this._XMLHttpRequest = new XMLHttpRequest(), this._XMLHttpRequest;
                 }
                 var e = "MSXML2.XMLHTTP",
                     t = ["Microsoft.XMLHTTP", e, e + ".3.0", e + ".4.0", e + ".5.0", e + ".6.0"],
                     _len = t.length;
                 for (var n = _len - 1; n > -1; n--) {
                     try {
-                        return this._XMLHttpRequest = new ActiveXObject(t[n]);
+                        return this._XMLHttpRequest = new ActiveXObject(t[n]), this._XMLHttpRequest;
                     } catch (r) {
                         continue;
                     }
@@ -115,12 +129,13 @@
             __onComplete: function(data){
                 clearTimeout(this._timeoutID);
                 this._isRunning = false;
+                this.resetEvents();
                 this.fire('complete', data);
             },
             __initRequestHeader: function (RH, args){
                 for(var k in args){
                     RH.setRequestHeader(k, args[k]);
-                };
+                }
             },
             resetEvents: function(){
                 this.off('before');
@@ -132,27 +147,35 @@
             },
             send: function (config){
                 if (this._isRunning){
-                    return;
+                    return false;
                 }
-                this._isRunning = true;
                 this.sets(config);
                 var _XHR = this.__initXMLHttpRequest(),
                     _self = this,
-                    _defer = ;
-                this._timeoutID = setTimeout(function(){
-                    if(_self._isRunning){
-                        _XHR.abort();
-                        _self.fire('timeout', _self);
-                        _self.__onComplete('timeout');
-                    }
-                }, this._timeout);
-                if (this.fire('before', this) != false && this.url){
+                    _defer = zn.async.defer();
+
+                this._isRunning = true;
+                if(this.timeout){
+                    this._timeoutID = setTimeout(function(){
+                        if(_self._isRunning){
+                            _XHR.abort();
+                            _self.fire('timeout', _self);
+                            _self.__onComplete('timeout');
+                        }
+                    }, this.timeout);
+                }
+                if (this.fire('before', this) !== false && this.url){
                     var _url = this.url,
                         _data = this.data,
                         _method = this._method.toUpperCase();
-                    if(_method !== 'POST'){
-                        _url = _url + '?' + _data;
+                    if(_method === 'GET'){
+                        if(_data){
+                            _url = _url + '?' + _data;
+                        }
                         _data = null;
+                    }
+                    if(_XHR.readyState<2){
+                        _XHR.withCredentials = true;
                     }
                     _XHR.open(_method, _url, this.asyns);
                     _XHR.onreadystatechange = function (event){
@@ -162,18 +185,27 @@
                                 t = _XHR.responseText,
                                 _ct = _XHR.getResponseHeader('Content-Type');
                             if (e >= 400 && e < 500) {
+                                _defer.reject(_XHR);
                                 this.fire('error', 'Client Error Code: '+e);
                                 return;
                             }
                             if (e >= 500) {
+                                _defer.reject(_XHR);
                                 this.fire('error', 'Server Error code: '+e);
                                 return;
                             }
-                            t = (_ct&&_ct.indexOf('application/json')>=0)?JSON.parse(t):t;
-                            if (e == 200) {
+                            try {
+                                t = (_ct && _ct.indexOf('application/json')>=0) ? JSON.parse(t) : t;
+                            } catch (error) {
+                                t = t;
+                            }
+
+                            if (e >= 200 && e < 300) {
+                                _defer.resolve(t, _XHR);
                                 this.fire('success', t);
                             } else {
-                                this.fire('error', t);
+                                _defer.reject(_XHR);
+                                this.fire('error', _XHR);
                             }
                             this.__onComplete(_XHR);
                             return t;
@@ -187,6 +219,8 @@
                 }else {
                     this.__onComplete(_XHR);
                 }
+
+                return _defer.promise;
             },
             abort: function (){
                 if(this._XMLHttpRequest){
@@ -219,24 +253,16 @@
                         return this._data[i].resetEvents(), this._data[i];
                     }
                 }
-                if(this.count >= this.max){
-                    return null;
-                } else {
-                    return (function(context){
-                        var _xhr = new XHR();
-                        context._data.push(_xhr);
-                        return _xhr;
-                    })(this);
-                }
+
+                return (function(context){
+                    var _xhr = new XHR();
+                    context._data.push(_xhr);
+                    return _xhr;
+                })(this);
             }
         }
     });
 
-    /**
-     * HttpClient: HttpClient
-     * @class nx.http.HttpClient
-     * @namespace nx.task
-     */
     var HttpClient = zn.Class({
         properties: {
             timeout: 1000
@@ -247,20 +273,17 @@
             },
             request: function (value, callback){
                 var _xhr = XHRPool.getInstance();
-                if (_xhr){
-                    zn.each(value, function(v, k){
-                        if(typeof v=='function'){
-                            _xhr.on(k, v, this);
-                        }
-                    }, this);
-                    callback ? callback(_xhr) : void(0);
-                    return _xhr.send(value);
-                }else {
-                    var _self = this;
-                    setTimeout(function (){
-                        _self.request(value, callback);
-                    }, _self._timeout);
+                zn.each(value, function(v, k){
+                    if(typeof v=='function'){
+                        _xhr.on(k, v, this);
+                    }
+                }, this);
+
+                if(callback) {
+                    callback(_xhr);
                 }
+
+                return _xhr.send(value);
             },
             get: function (value){
                 return value.method = 'GET', this.request(value);

@@ -214,6 +214,6 @@
         }
     });
 
-    zn.GLOBAL.async = zn.async = Async;
+    zn.async = Async;
 
 })(zn);

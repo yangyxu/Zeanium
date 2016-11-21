@@ -343,28 +343,48 @@
         toString: function (){
             return '{ ClassName: ' + (this._name_ || 'Anonymous') + ', ClassID: ' + this._id_ + ' }';
         },
-        getProperties: function (clazz, props){
-            var _props = props || {};
-            if(!clazz.getMeta || clazz._name_ == 'ZNObject') {
+        getProperties: function(callback){
+            var _props = {};
+            if(!this.getMeta || this._name_ == 'ZNObject'){
                 return _props;
             }
 
-            zn.extend(_props, clazz.getMeta('properties'));
-
-            var _super = clazz._super_,
-                _mixins = clazz._mixins_;
+            var _super = this._super_,
+                _mixins = this._mixins_;
 
             if(_super){
-                zn.extend(_props, this.getProperties(_super));
+                zn.extend(_props, _super.getProperties(callback));
             }
 
             if(_mixins && _mixins.length){
                 zn.each(_mixins, function (mixin){
-                    zn.extend(_props, this.getProperties(mixin));
-                }, this);
+                    zn.extend(_props, mixin.getProperties(callback));
+                });
             }
 
+            zn.each(this.getMeta('properties'), function (prop, index){
+                var _callback = callback && callback(index, prop)===false;
+                if(!_callback){
+                    if(!prop.hidden){
+                        _props[index] = prop;
+                    }
+                }
+            });
+
             return _props;
+        },
+        getPropertie: function (name){
+            var _prop = null;
+            if(name){
+                zn.each(this.getProperties(), function (field, key){
+                    if(name == key){
+                        _prop = field;
+                    }
+                    return -1;
+                });
+            }
+
+            return _prop;
         },
         /**
          * Get the meta data of the class.
@@ -454,6 +474,12 @@
             }, this);
 
             return _json;
+        },
+        getProperties: function (){
+            return this.constructor.getProperties();
+        },
+        getPropertie: function (name){
+            return this.constructor.getPropertie(name);
         },
         /**
          * Add a single event handler.
@@ -637,6 +663,10 @@
     });
 
     zn.extend(ZNObject.prototype, sharedMethods, instanceMethods);
+
+    zn.isZNObject = function (value) {
+        return value instanceof ZNObject;
+    };
 
     var __class = {
         _arguments: function (){

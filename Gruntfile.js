@@ -8,6 +8,9 @@ module.exports = function (grunt) {
             }
         },
         jshint: {
+            base: {
+                src: '<%= pkg.base %>'
+            },
             core: {
                 src: '<%= pkg.core %>'
             },
@@ -19,6 +22,10 @@ module.exports = function (grunt) {
             }
         },
         concat: {
+            base: {
+                src: '<%= pkg.base %>',
+                dest: 'dist/zn.base.js'
+            },
             core: {
                 src: '<%= pkg.core %>',
                 dest: 'dist/zn.core.js'
@@ -29,6 +36,15 @@ module.exports = function (grunt) {
             }
         },
         uglify: {
+            base: {
+                src: ['dist/zn.base.js'],
+                dest: 'dist/zn.base.minx.js',
+                options: {
+                    beautify: {
+                        ascii_only: true
+                    }
+                }
+            },
             core: {
                 src: ['dist/zn.core.js'],
                 dest: 'dist/zn.core.minx.js',

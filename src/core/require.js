@@ -13,10 +13,13 @@
             LOADED: 3
         };
 
-    var _doc = zn.GLOBAL.document;
 
-    if(!_doc){
+    var _doc = null;
+
+    if(typeof module !== 'undefined' && module.exports){
         zn.SLASH = SLASH = require('path').sep;
+    }else {
+        _doc = document;
     }
 
     var __path = {
@@ -218,7 +221,17 @@
             path: '',
             dependencies: null,
             factory: null,
-            value: null
+            value: {
+                set: function (value){
+                    if(value._ctors_){
+                        value.$path = this.get('path');
+                    }
+                    this._value = value;
+                },
+                get: function (){
+                    return this._value;
+                }
+            }
         },
         methods: {
             init: function (path, dependencies, factory) {

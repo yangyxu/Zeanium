@@ -14,6 +14,23 @@
         idleObject: function () {
             return {};
         },
+        format: function (){
+            var _argv = arguments,
+                _value = null,
+                _values = null;
+            if(_argv.length<2){
+                return _argv[0];
+            }else {
+                _value = _argv[0].toString();
+                _values = _argv[1];
+                __builtinZNObject__.each(_values, function (value, index){
+                    value = (__builtinZNObject__.is(value, 'object')?JSON.stringify(value):value.toString());
+                    _value = _value.replace(new RegExp('\\{'+index+'\\}', 'gi'), value);
+                });
+            }
+
+            return _value;
+        },
         uuid: function () {
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
                 var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -122,6 +139,42 @@
                     _method.apply(_context, args);
                 }
             }
+        },
+        deepEachObject: function (data, handler, context){
+            if(__builtinZNObject__.is(data, 'object')){
+                var _value = null,
+                    _result;
+            	for(var key in data){
+            		_value = data[key];
+                    if(__builtinZNObject__.is(_value, 'object')){
+                        this.deepEachObject(_value, handler, context);
+                    }else {
+                        _result = handler && handler.call(context, _value, key, data);
+                        if(_result!==undefined&&_result!==null){
+                            data[key] = _result;
+                        }
+                    }
+            	}
+            }
+
+        	return data;
+        },
+        arrayValueToObject: function (data, handler, context){
+            if(__builtinZNObject__.is(data, 'array')){
+                var _value = null,
+                    _data = {},
+                    _result;
+                for(var i = 0, _len = data.length; i < _len; i++){
+                    _value = data[i];
+                    _result = handler && handler.call(context, _value, i, data);
+                    if(_result!==undefined&&_result!==null){
+                        _data[_value] = _result;
+                    }
+                }
+                data = _data;
+            }
+
+        	return data;
         }
     };
 

@@ -9,11 +9,19 @@ var zn = {
     GLOBAL: (function () { return this; }).call(null)
 };
 
+if(zn.GLOBAL){
+    zn.GLOBAL.zn = zn;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = zn;
     zn.ZN_PATH = __dirname;
     zn.PATH = process.cwd();
 }else{
+    if(window){
+        window.zn = zn;
+    }
+
     var _zn_url = '';
     try{
         __a__ = __b__;
@@ -60,5 +68,3 @@ if (typeof module !== 'undefined' && module.exports) {
         throw new Error('zn.js has not been included, please do it first.');
     }
 }
-
-zn.GLOBAL.zn = zn;  //set global zn var

@@ -121,9 +121,4 @@
         }
     });
 
-    /*
-    if(!zn.GLOBAL.JSON){
-        zn.GLOBAL.JSON = zn.JSON;
-    }*/
-
 })(zn);
