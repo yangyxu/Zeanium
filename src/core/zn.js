@@ -1,27 +1,30 @@
 /**
  * Global Var
  */
+
+var __isServer = Object.prototype.toString.call(typeof process !== 'undefined' ? process : 0) === '[object process]';
 var zn = {
     VERSION: '0.0.1',
     DEBUG: false,
     ZN_PATH: '',
     PATH: '',
-    GLOBAL: (function () { return this; }).call(null)
+    isServer: __isServer,
+    GLOBAL: (function () {
+        if(__isServer){
+            return global;
+        }else {
+            return window;
+        }
+    }).call(null)
 };
 
-if(zn.GLOBAL){
-    zn.GLOBAL.zn = zn;
-}
+zn.GLOBAL.zn = zn;
 
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = zn;
+if (__isServer) {
     zn.ZN_PATH = __dirname;
     zn.PATH = process.cwd();
+    module.exports = zn;
 }else{
-    if(window){
-        window.zn = zn;
-    }
-
     var _zn_url = '';
     try{
         __a__ = __b__;

@@ -3,7 +3,11 @@
         "src/core/zn.js",
         "src/core/builtin.js",
         "src/core/fix.js",
-        "src/core/class.js"
+        "src/core/class.js",
+        "src/util/Queue.js",
+        "src/util/Async.js",
+        "src/util/Http.js",
+        "src/util/Store.js"
     ],
     "core": [
         "src/core/zn.js",
@@ -14,7 +18,8 @@
         "src/util/Queue.js",
         "src/util/Logger.js",
         "src/util/Async.js",
-        "src/util/Http.js"
+        "src/util/Http.js",
+        "src/util/Store.js"
     ],
     "data": [
         "src/data/List.js",

@@ -37,6 +37,11 @@
                 return v.toString(16);
             }).toUpperCase();
         },
+        serializeJSON: function (data){
+            return Object.keys(data).map(function (key) {
+                return encodeURIComponent(key) + '=' + encodeURIComponent(data[key]);
+            }).join('&');
+        },
         fix: function (target){
             var _target = target||{};
             for (var i = 1, _len = arguments.length; i < _len; i++) {

@@ -184,6 +184,8 @@
                             var e = _XHR.status,
                                 t = _XHR.responseText,
                                 _ct = _XHR.getResponseHeader('Content-Type');
+
+                            //_XHR.abort();   //TODO: This line code has some issue.
                             if (e >= 400 && e < 500) {
                                 _defer.reject(_XHR);
                                 this.fire('error', 'Client Error Code: '+e);
@@ -194,20 +196,23 @@
                                 this.fire('error', 'Server Error code: '+e);
                                 return;
                             }
-                            try {
-                                t = (_ct && _ct.indexOf('application/json')>=0) ? JSON.parse(t) : t;
-                            } catch (error) {
-                                t = t;
-                            }
+
 
                             if (e >= 200 && e < 300) {
+                                try {
+                                    t = (_ct && _ct.indexOf('application/json')>=0) ? JSON.parse(t) : t;
+                                } catch (error) {
+                                    t = t;
+                                }
                                 _defer.resolve(t, _XHR);
                                 this.fire('success', t);
                             } else {
+                                _XHR.abort();
                                 _defer.reject(_XHR);
                                 this.fire('error', _XHR);
                             }
                             this.__onComplete(_XHR);
+
                             return t;
                         }
                     }.bind(this);

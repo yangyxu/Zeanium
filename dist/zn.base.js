@@ -1,27 +1,30 @@
 /**
  * Global Var
  */
+
+var __isServer = Object.prototype.toString.call(typeof process !== 'undefined' ? process : 0) === '[object process]';
 var zn = {
     VERSION: '0.0.1',
     DEBUG: false,
     ZN_PATH: '',
     PATH: '',
-    GLOBAL: (function () { return this; }).call(null)
+    isServer: __isServer,
+    GLOBAL: (function () {
+        if(__isServer){
+            return global;
+        }else {
+            return window;
+        }
+    }).call(null)
 };
 
-if(zn.GLOBAL){
-    zn.GLOBAL.zn = zn;
-}
+zn.GLOBAL.zn = zn;
 
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = zn;
+if (__isServer) {
     zn.ZN_PATH = __dirname;
     zn.PATH = process.cwd();
+    module.exports = zn;
 }else{
-    if(window){
-        window.zn = zn;
-    }
-
     var _zn_url = '';
     try{
         __a__ = __b__;
@@ -107,6 +110,11 @@ if (typeof module !== 'undefined' && module.exports) {
                 var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
                 return v.toString(16);
             }).toUpperCase();
+        },
+        serializeJSON: function (data){
+            return Object.keys(data).map(function (key) {
+                return encodeURIComponent(key) + '=' + encodeURIComponent(data[key]);
+            }).join('&');
         },
         fix: function (target){
             var _target = target||{};
@@ -1619,5 +1627,1058 @@ if (typeof module !== 'undefined' && module.exports) {
     }
 
     zn.Class = define;
+
+})(zn);
+
+/**
+ * Created by yangyxu on 2016/4/5.
+ * Queue: Queue
+ */
+(function (zn){
+
+    var __slice = Array.prototype.slice;
+
+    //__slice.call(arguments);
+
+    var TASK_STATE = {
+        PENDING: 0,
+        CANCLE: 1,
+        PAUSE: 2,
+        FINISHED: 3
+    };
+
+    /**
+     * TaskProcessor: TaskProcessor
+     * @class TaskProcessor
+     **/
+    var TaskProcessor = zn.Class({
+        events: ['init', 'finished'],
+        properties: {
+            status: {
+                value: TASK_STATE.PENDING,
+                get: function (){
+                    return this._status;
+                }
+            }
+        },
+        methods: {
+            init: function (inArgs) {
+
+            },
+            doTask: function (task, argv){
+                if(task){
+                    var _argv = argv||[];
+                    _argv.unshift(this);
+                    task.handler.apply(task.context, _argv);
+                }
+            },
+            done: function (){
+                this._status = TASK_STATE.FINISHED;
+                this._data = __slice.call(arguments);
+                this.fire('finished', this._data);
+                this.off('finished');
+            }
+        }
+    });
+
+    /**
+     * Queue: Queue
+     * @class Queue
+     **/
+    var Queue = zn.Class({
+        events: [
+            'clear',
+            'push',
+            'pause',
+            'resume',
+            'exception',
+            'every',
+            'finally'
+        ],
+        properties: {
+            count: {
+                get: function (){
+                    return this._tasks.length;
+                }
+            }
+        },
+        methods: {
+            init: function (inArgs) {
+                this._exceptions = [];
+                this._finallys = [];
+                this._everys = [];
+                this._tasks = [];
+                this._taskProcessor = [];
+                this._lastTask = null;
+                this._data = [];
+                this._max = (inArgs||{}).max || 1;
+            },
+            destroy: function (){
+                this._everys = [];
+                this._tasks = [];
+                this._taskProcessor = [];
+                this.fire('finally', this._data, { method: 'apply' });
+                this.super();
+            },
+            clear: function (){
+                this._tasks = [];
+            },
+            pause: function (maxWaitTime){
+                this._paused = true;
+        		if(maxWaitTime > 0) {
+        			this._pauseTimer = setTimeout(function() {
+        				this.resume();
+        			}.bind(this), maxWaitTime);
+        		}
+                this.fire('pause');
+                return this;
+            },
+            resume: function (){
+                if(this._pauseTimer){
+                    clearTimeout(this._pauseTimer);
+                }
+                this._paused = false;
+                this.fire('resume');
+                this.doTask();
+
+                return this;
+            },
+            exception: function (handler, context){
+                return this.on('exception', handler, context || this), this;
+            },
+            catch: function (exception){
+                return this.fire('exception', exception), this;
+            },
+            finally: function (handler, context){
+                return this.on('finally', handler, context || this), this;
+            },
+            every: function (handler, context){
+                return this.on('every', handler, context || this), this;
+            },
+            push: function (handler, context){
+                var _task = {
+                    handler: handler,
+                    context: context || this
+                };
+
+                if(this._lastTask){
+                    _task.previous = _task;
+                    this._lastTask.next = _task;
+                }
+
+                this._lastTask = _task;
+                this._tasks.push(_task);
+                this.fire('push', _task);
+                return this;
+            },
+            getTaskProcessor: function (){
+                var _tp = null, _len = this._taskProcessor.length;
+                for (var i = 0; i < _len; i++) {
+                    _tp = this._taskProcessor[i];
+                    if(_tp.status == TASK_STATE.FINISHED){
+                        return _tp;
+                    }
+                }
+                if(!_tp&&this._max > _len){
+                    var _processor = new TaskProcessor();
+                    _processor.queue = this;
+                    _processor.on('finished', this.__onProcessorFinished.bind(this), this);
+                    return _processor;
+                }
+            },
+            start: function (){
+                this._data = [];
+                return this.doTask();
+            },
+            doTask: function (data){
+                var _task = this._tasks.shift();
+                if(_task){
+                    var _taskProcessor = this.getTaskProcessor();
+                    if(_taskProcessor){
+                        _task.previousResult = data;
+                        _taskProcessor.doTask(_task, data);
+                    }
+                }else {
+                    this.destroy();
+                }
+
+                return this;
+            },
+            __onProcessorFinished: function (sender, data){
+                this._data.push(data);
+                this.fire('every', data, { method: 'apply' });
+                this.doTask(data);
+            }
+        }
+    });
+
+    zn.queue = function(argv){
+        return new Queue(argv);
+    };
+
+})(zn);
+
+/**
+ * Created by yangyxu on 2014/9/16.
+ * Promise: Promise
+ */
+(function (zn){
+
+    var __slice = Array.prototype.slice;
+
+    //__slice.call(arguments);
+
+    /**
+     * Promise: Promise
+     * @class Async
+     * @namespace zn.util
+     **/
+
+    var PROMISE_STATE = {
+        PENDING: 0,
+        FULFILLED: 1,
+        REJECTED: 2
+    };
+
+    var Async = zn.Class({
+        static: true,
+        methods: {
+            init: function (inArgs) {
+                this._exceptions = [];
+                this._finallys = [];
+                this._count = 0;
+                this._currIndex = 0;
+                this._dataArray = [];
+            },
+            exception: function (onException){
+                return this._exceptions.push(onException), this;
+            },
+            catch: function (ex, context){
+                zn.each(this._exceptions, function (exception){
+                    exception.call(context, ex);
+                });
+
+                return this;
+            },
+            finally: function (onFinally){
+                return this._finallys.push(onFinally), this;
+            },
+            defer: function (resolve, reject) {
+                var _self = this,
+                    _defer = new Defer(resolve, reject);
+                _defer.on('complete', function (sender, data){
+                    _self._currIndex++;
+                    _self._dataArray.push(data);
+                    if(_self._currIndex==_self._count){
+                        zn.each(_self._finallys, function (_finally){
+                            try {
+                                _finally(_self._dataArray);
+                            } catch(e) {
+                                zn.error(e.message);
+                            }
+                        });
+                        _self._finallys = [];
+                    }
+                });
+                _self._count++;
+
+                return _defer;
+            },
+            all: function (promises) {
+                var _deferred = Async.defer();
+                var _n = 0, _result = [];
+                zn.each(promises, function (promise){
+                    promise.then(function (ret){
+                        _result.push(ret);
+                        _n++;
+                        if(_n>=promises.length){
+                            _deferred.resolve(_result);
+                        }
+                    });
+                });
+                return _deferred.promise;
+            },
+            any: function (promises) {
+                var _deferred = Async.defer();
+                zn.each(promises, function (promise){
+                    promise.then(function (ret){
+                        _deferred.resolve(ret);
+                    });
+                });
+                return _deferred.promise;
+            }
+        }
+    });
+
+
+    var Defer = zn.Class({
+        events: ['complete'],
+        properties: {
+            promise: null
+        },
+        methods: {
+            init: function (resolve, reject) {
+                this._promise = new Promise();
+                if(resolve){
+                    this.resolve(resolve);
+                }
+                if(reject){
+                    this.reject(reject);
+                }
+            },
+            resolve: function () {
+                var data = __slice.call(arguments);
+                try {
+                    var _promise = this.get('promise'), _self = this;
+                    if (_promise.get('readyState') != PROMISE_STATE.PENDING){
+                        return;
+                    }
+                    _promise.set('readyState', PROMISE_STATE.FULFILLED);
+                    _promise.set('data', data);
+                    zn.each(_promise.get('resolves'), function (handler){
+                        handler.apply(_self, data);
+                    });
+                } catch(ex) {
+                    Async.catch(ex, this);
+                }
+                this.fire('complete', data);
+            },
+            reject: function () {
+                var reason = __slice.call(arguments);
+                try {
+                    var _promise = this.get('promise');
+                    if (_promise.get('readyState') != PROMISE_STATE.PENDING){
+                        return;
+                    }
+                    _promise.set('readyState', PROMISE_STATE.REJECTED);
+                    _promise.set('reason', reason);
+                    var _handler = _promise.get('rejects')[0];
+                    if (_handler){
+                        _handler.apply(this, reason);
+                    }
+                } catch(ex) {
+                    Async.catch(ex, this);
+                }
+                this.fire('complete', reason);
+            }
+        }
+    });
+
+    var Promise = zn.Class({
+        statics: {
+            isPromise: function (obj) {
+                return obj !== null && obj !== undefined && typeof obj.then === 'function';
+            },
+            defer: null
+        },
+        properties: {
+            resolves: null,
+            rejects: null,
+            data: null,
+            reason: null,
+            readyState: null
+        },
+        methods: {
+            init: function (inArgs) {
+                this.set('resolves', []);
+                this.set('rejects', []);
+                this.set('exceptions', []);
+                this.set('readyState',PROMISE_STATE.PENDING);
+            },
+            then: function (onFulfilled, onRejected) {
+                var deferred = new Defer();
+                function fulfill(){
+                    var _data = __slice.call(arguments);
+                    var _return = onFulfilled ? onFulfilled.apply(this, _data) : _data;
+
+                    if (Promise.isPromise(_return)){
+                        _return.then(function (){
+                            deferred.resolve.apply(deferred, __slice.call(arguments));
+                        });
+                    } else {
+                        deferred.resolve.apply(deferred, _return);
+                    }
+
+                    return _return;
+                }
+
+                if(this.get('readyState')===PROMISE_STATE.PENDING){
+                    this.get('resolves').push(fulfill);
+                    if(onRejected){
+                        this.get('rejects').push(onRejected);
+                    }else {
+                        this.get('rejects').push(function () {
+                            deferred.reject.apply(deferred, __slice.call(arguments));
+                        });
+                    }
+                }else if (this.get('readyState')===PROMISE_STATE.FULFILLED) {
+                    var _self = this;
+                    setTimeout(function (){
+                        //fulfill.call();
+                        fulfill.apply(_self, _self.get('data'));
+                    });
+                }
+
+                return deferred.promise;
+
+            },
+            catch: function (onException){
+                return Async.exception(onException);
+            },
+            finally: function (onFinally){
+                return Async.finally(onFinally);
+            },
+            otherwise: function (onRejected) {
+                return this.then(undefined, onRejected);
+            }
+        }
+    });
+
+    zn.async = Async;
+
+})(zn);
+
+(function (zn) {
+
+    var MIME = {
+        text: 'text/plain; charset=UTF-8',
+        html: 'text/html; charset=UTF-8',
+        xml: 'text/xml; charset=UTF-8',
+        form: 'application/x-www-form-urlencoded; charset=UTF-8',
+        json: 'application/json; charset=UTF-8',
+        javascript: 'text/javascript; charset=UTF-8'
+    };
+
+    var Task = zn.Class({
+        events: [ 'init', 'start', 'stop', 'cancle', 'goNext', 'goPre' ],
+        properties: {
+            pre: null,
+            next: null,
+            delay: null,
+            action: null,
+            args: [],
+            context: this,
+            taskList: null,
+            status: {
+                value: '',
+                get: function () { return this._status; }
+            }
+        },
+        methods: {
+            init: function (config) {
+                this.sets(config);
+                this.fire('init', this);
+            },
+            start: function (){
+                if (this._status=='started'){ return; }
+                if (this._action){
+                    this._action.apply(this._context, this._args);
+                    this._status = 'started';
+                }else {
+                    this.goNext();
+                }
+                this.fire('start', this);
+            },
+            stop: function (){
+                this._status = 'stoped';
+                this.fire('stop', this);
+            },
+            cancle: function (){
+                this._status = 'cancle';
+                this.fire('cancle', this);
+            },
+            goNext: function (){
+                if (this._next){
+                    this._next.start();
+                }
+                this.fire('goNext', this);
+            },
+            goPre: function (){
+                if (this._pre){
+                    this._pre.start();
+                }
+                this.fire('goPre', this);
+            }
+        }
+    });
+
+    /**
+     * XHR: XmlHttpRequest
+     * @class XHR
+     * @constructor
+     */
+    var XHR = zn.Class({
+        properties: {
+            url: '',
+            data: {
+                set: function (value){
+                    this._data = value;
+                },
+                get: function (){
+                    return zn.is(this._data, 'object') ? JSON.stringify(this._data) : this._data;
+                }
+            },
+            method: 'GET',
+            asyns: true,
+            username: null,
+            password: null,
+            headers: {
+                get: function(){
+                    return zn.overwrite({
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-type': 'application/json'
+                    }, this._headers);
+                },
+                set: function (value){
+                    this._headers = value;
+                }
+            },
+            timeout: {
+                get: function (){
+                    return this._timeout || 2e4;
+                },
+                set: function (value){
+                    this._timeout = value;
+                }
+            }
+        },
+        events: ['before', 'after', 'success', 'error', 'complete', 'timeout' ],
+        methods: {
+            init: function (argv){
+                this.sets(argv);
+                this._isRunning = false;
+            },
+            __initXMLHttpRequest: function (){
+                if (this._XMLHttpRequest){
+                    return this._XMLHttpRequest;
+                }
+                if (!window.ActiveXObject){
+                    return this._XMLHttpRequest = new XMLHttpRequest(), this._XMLHttpRequest;
+                }
+                var e = "MSXML2.XMLHTTP",
+                    t = ["Microsoft.XMLHTTP", e, e + ".3.0", e + ".4.0", e + ".5.0", e + ".6.0"],
+                    _len = t.length;
+                for (var n = _len - 1; n > -1; n--) {
+                    try {
+                        return this._XMLHttpRequest = new ActiveXObject(t[n]), this._XMLHttpRequest;
+                    } catch (r) {
+                        continue;
+                    }
+                }
+            },
+            __onComplete: function(data){
+                clearTimeout(this._timeoutID);
+                this._isRunning = false;
+                this.resetEvents();
+                this.fire('complete', data);
+            },
+            __initRequestHeader: function (RH, args){
+                for(var k in args){
+                    RH.setRequestHeader(k, args[k]);
+                }
+            },
+            resetEvents: function(){
+                this.off('before');
+                this.off('after');
+                this.off('success');
+                this.off('error');
+                this.off('complete');
+                this.off('timeout');
+            },
+            send: function (config){
+                if (this._isRunning){
+                    return false;
+                }
+                this.sets(config);
+                var _XHR = this.__initXMLHttpRequest(),
+                    _self = this,
+                    _defer = zn.async.defer();
+
+                this._isRunning = true;
+                if(this.timeout){
+                    this._timeoutID = setTimeout(function(){
+                        if(_self._isRunning){
+                            _XHR.abort();
+                            _self.fire('timeout', _self);
+                            _self.__onComplete('timeout');
+                        }
+                    }, this.timeout);
+                }
+                if (this.fire('before', this) !== false && this.url){
+                    var _url = this.url,
+                        _data = this.data,
+                        _method = this._method.toUpperCase();
+                    if(_method === 'GET'){
+                        if(_data){
+                            _url = _url + '?' + _data;
+                        }
+                        _data = null;
+                    }
+                    if(_XHR.readyState<2){
+                        _XHR.withCredentials = true;
+                    }
+                    _XHR.open(_method, _url, this.asyns);
+                    _XHR.onreadystatechange = function (event){
+                        var _XHR = event.currentTarget;
+                        if (_XHR.readyState == 4) {
+                            var e = _XHR.status,
+                                t = _XHR.responseText,
+                                _ct = _XHR.getResponseHeader('Content-Type');
+
+                            //_XHR.abort();   //TODO: This line code has some issue.
+                            if (e >= 400 && e < 500) {
+                                _defer.reject(_XHR);
+                                this.fire('error', 'Client Error Code: '+e);
+                                return;
+                            }
+                            if (e >= 500) {
+                                _defer.reject(_XHR);
+                                this.fire('error', 'Server Error code: '+e);
+                                return;
+                            }
+
+
+                            if (e >= 200 && e < 300) {
+                                try {
+                                    t = (_ct && _ct.indexOf('application/json')>=0) ? JSON.parse(t) : t;
+                                } catch (error) {
+                                    t = t;
+                                }
+                                _defer.resolve(t, _XHR);
+                                this.fire('success', t);
+                            } else {
+                                _XHR.abort();
+                                _defer.reject(_XHR);
+                                this.fire('error', _XHR);
+                            }
+                            this.__onComplete(_XHR);
+
+                            return t;
+                        }
+                    }.bind(this);
+                    this.__initRequestHeader(_XHR, this.headers);
+                    _XHR.send(_data);
+                    if(!this.asyns){
+                        this.__onComplete(_XHR);
+                    }
+                }else {
+                    this.__onComplete(_XHR);
+                }
+
+                return _defer.promise;
+            },
+            abort: function (){
+                if(this._XMLHttpRequest){
+                    this._XMLHttpRequest.abort();
+                }
+            }
+        }
+    });
+
+    /**
+     * XHRPool: XmlHttpRequestPool
+     * @class nx.http.XHRPool
+     * @constructor
+     */
+    var XHRPool = zn.Class({
+        static: true,
+        properties: {
+            max: 3,
+            count: {
+                get: function (){ return this._data.length;  }
+            }
+        },
+        methods: {
+            init: function (){
+                this._data = [];
+            },
+            getInstance: function (){
+                for(var i= 0, _len = this._data.length; i<_len; i++){
+                    if(!this._data[i]._isRunning){
+                        return this._data[i].resetEvents(), this._data[i];
+                    }
+                }
+
+                return (function(context){
+                    var _xhr = new XHR();
+                    context._data.push(_xhr);
+                    return _xhr;
+                })(this);
+            }
+        }
+    });
+
+    var HttpClient = zn.Class({
+        properties: {
+            timeout: 1000
+        },
+        methods: {
+            init: function(config){
+                this.sets(config);
+            },
+            request: function (value, callback){
+                var _xhr = XHRPool.getInstance();
+                zn.each(value, function(v, k){
+                    if(typeof v=='function'){
+                        _xhr.on(k, v, this);
+                    }
+                }, this);
+
+                if(callback) {
+                    callback(_xhr);
+                }
+
+                return _xhr.send(value);
+            },
+            get: function (value){
+                return value.method = 'GET', this.request(value);
+            },
+            post: function (value){
+                return value.method = 'POST', this.request(value);
+            },
+            put: function (value){
+                return value.method = 'PUT', this.request(value);
+            },
+            delete: function (value){
+                return value.method = 'DELETE', this.request(value);
+            }
+        }
+    });
+
+    var _http = new HttpClient();
+
+    zn.extend(zn, {
+        $get: _http.get.bind(_http),
+        $post: _http.post.bind(_http),
+        $put: _http.put.bind(_http),
+        $delete: _http.delete.bind(_http)
+    });
+
+})(zn);
+
+(function (zn) {
+
+    var MIME = {
+        text: 'text/plain; charset=UTF-8',
+        html: 'text/html; charset=UTF-8',
+        xml: 'text/xml; charset=UTF-8',
+        form: 'application/x-www-form-urlencoded; charset=UTF-8',
+        json: 'application/json; charset=UTF-8',
+        javascript: 'text/javascript; charset=UTF-8'
+    };
+
+    var HttpRequest = zn.Class({
+        events: [ 'init' ],
+        properties: {
+            url: null,
+            data: null,
+            method: 'POST',
+            headers: null,
+            onExec: null,
+            success: null,
+            error: null,
+            timeout: null
+        },
+        methods: {
+            init: function (url, data, method, headers) {
+                this.sets({
+                    url: url,
+                    data: data,
+                    method: method,
+                    headers: headers
+                });
+                this.fire('init', this);
+            },
+            exec: function (url, data, method, headers){
+                var _url = url || this._url,
+                    _data = data || this._data || {},
+                    _method = method || this._method,
+                    _headers = headers || this._headers || {};
+
+                var _result = this._onExec && this._onExec(this);
+                if(_result===false){
+                    return false;
+                }
+
+                return zn['$' + _method.toLowerCase()]({
+                    url: Store.fixURL(_url),
+                    data: _data,
+                    success: this._success,
+                    error: this._error,
+                    timeout: this._timeout,
+                    headers: _headers
+                });
+            },
+            refresh: function (){
+                this.exec();
+            },
+            copyAndExt: function (data){
+                var _data = this._data;
+                if(typeof _data === 'object'){
+                    _data = JSON.parse(JSON.stringify(_data));
+                    for(var key in data){
+                        _data[key] = data[key];
+                    }
+                }else {
+                    _data = data;
+                }
+
+                return new HttpRequest(this._url, _data, this._method);
+            },
+            ext: function (){
+                var _data = this._data;
+                for(var key in data){
+                    _data[key] = data[key];
+                }
+
+                return this;
+            }
+        }
+    });
+
+    var Fetcher = zn.Class({
+        events: [ 'init' ],
+        properties: {
+            url: null,
+            data: null,
+            method: 'POST',
+            headers: null,
+            onExec: null,
+            success: null,
+            error: null
+        },
+        methods: {
+            init: function (url, data, method, headers) {
+                this.sets({
+                    url: url,
+                    data: data,
+                    method: method,
+                    headers: headers
+                });
+                this.fire('init', this);
+            },
+            exec: function (url, data, method, headers){
+                var _self = this,
+                    _url = url || this._url,
+                    _data = data || this._data || {},
+                    _method = method || this._method,
+                    _headers = headers || this._headers || {};
+
+                var _result = this._onExec && this._onExec(this);
+                if(_result===false){
+                    return false;
+                }
+
+                switch (_method.toUpperCase()) {
+                    case "POST":
+                        var _temp = new FormData();
+                        for(var key in _data){
+                            _temp.append(key, _data[key]);
+                        }
+                        _data = _temp;
+                        _headers = zn.overwrite(_headers, {
+                            'Accept': 'multipart/form-data',
+                            'Content-Type': 'multipart/form-data; charset=UTF-8'
+                        });
+                        break;
+                    case "GET":
+
+                        break;
+                    case "JSON":
+                        _data = JSON.stringify(_data);
+                        _method = 'POST';
+                        _headers = zn.overwrite(_headers, {
+                            'Accept': 'multipart/form-data',
+                            'Content-Type': 'multipart/form-data; charset=UTF-8'
+                        });
+                        break;
+                }
+
+                return new Promise(function (resolve, reject) {
+                    fetch(_url, {
+                        method: _method.toUpperCase(),
+                        body: _data,
+                        headers: _headers
+                    })
+                    .then(function (response) {
+                        return response.json();
+                    })
+                    .then(function (responseData) {
+                        if(_self._success){
+                            _self._success(responseData);
+                        }
+                        resolve(responseData);
+                    })
+                    .catch(function (error) {
+                        if(_self._error){
+                            _self._error(error);
+                        }
+                        reject(error);
+                    });
+                });
+            },
+            refresh: function (){
+                this.exec();
+            },
+            copyAndExt: function (data){
+                var _data = this._data;
+                if(typeof _data === 'object'){
+                    _data = JSON.parse(JSON.stringify(_data));
+                    for(var key in data){
+                        _data[key] = data[key];
+                    }
+                }else {
+                    _data = data;
+                }
+
+                return new Fetcher(this._url, _data, this._method);
+            },
+            ext: function (){
+                var _data = this._data;
+                for(var key in data){
+                    _data[key] = data[key];
+                }
+
+                return this;
+            }
+        }
+    });
+
+
+    var DataSource = zn.Class({
+        events: [ 'init', 'exec' ],
+        properties: {
+            data: null,
+            argv: {
+                set: function (value){
+                    this._argv = value;
+                },
+                get: function (){
+                    return this._argv || {};
+                }
+            }
+        },
+        methods: {
+            init: function (data, argv) {
+                this.reset(data, argv);
+                this.fire('init', this);
+            },
+            reset: function (data, argv){
+                this.sets({
+                    data: data,
+                    argv: argv
+                });
+            },
+            refresh: function (){
+                this.exec();
+            },
+            exec: function (){
+                var _data = this._data;
+            	if(!_data){
+                    return;
+                }
+                var _temp = this._argv.onSubmitBefore && this._argv.onSubmitBefore(_data, this._argv);
+                if(_temp===false){
+                    return;
+                }
+                if(_temp!==undefined){
+                    _data = _temp;
+                }
+
+            	if(_data.__id__){
+                    if(!_data._onExec){
+                        _data._onExec = this._argv.onExec;
+                    }
+                    _data._success = function (sender, data){
+                        var _temp = (Store._success && Store._success(data));
+                        if(_temp!==false){
+                            if(this._argv.onSuccess){
+                                this._argv.onSuccess(data);
+                            }
+                        }
+            		}.bind(this);
+                    _data._error = function (sender, data){
+                        var _temp = (Store._error && Store._error(data));
+                        if(_temp!==false){
+                            if(this._argv.onError){
+                                this._argv.onError(data);
+                            }
+                        }
+            		}.bind(this);
+            		_data.exec();
+            	} else {
+                    if((this._argv.onExec && this._argv.onExec(_data))===false){
+                        return false;
+                    }
+                    if(this._argv.onSuccess){
+                        this._argv.onSuccess(data);
+                    }
+            	}
+            }
+        }
+    });
+
+    zn.GLOBAL.Store = zn.Class({
+        static: true,
+        properties: {
+            HOST: 'http://0.0.0.0:8080/'
+        },
+        methods: {
+            requestHandler: function (success, error){
+                this._success = success;
+                this._error = error;
+            },
+            request: function (url, data, method, headers){
+                return new HttpRequest(url, data, method, headers);
+            },
+            post: function (url, data, headers){
+                return new HttpRequest(url, data, "POST", headers);
+            },
+            delete: function (url, data, headers){
+                return new HttpRequest(url, data, "DELETE", headers);
+            },
+            put: function (url, data, headers){
+                return new HttpRequest(url, data, "PUT", headers);
+            },
+            get: function (url, data, headers){
+                return new HttpRequest(this.formatURL(url, data), data, "GET", headers);
+            },
+            fetch: function (url, data, method, headers){
+                return new Fetcher(url, data, method, headers);
+            },
+            fetchPost: function (url, data, headers){
+                return new Fetcher(url, data, "POST", headers);
+            },
+            fetchGet: function (url, data, headers){
+                return new Fetcher(this.formatURL(url, data), data, "GET", headers);
+            },
+            setHost: function (value){
+                this._HOST = value;
+            },
+            getHost: function (){
+                return this._HOST;
+            },
+            fixURL: function (url) {
+                if(!url){
+                    return '';
+                }
+                if(url && url.indexOf('http://') === -1){
+                    url = this._HOST + url;
+                }
+
+                return url;
+            },
+            formatURL: function (url, data){
+                for(var key in data){
+                    url = url.replace(new RegExp('{' + key + '}', 'gi'), data[key]||'');
+                }
+
+                return url;
+            },
+            dataSource: function (data, argv) {
+                return new DataSource(data, argv);
+            }
+        }
+    });
 
 })(zn);
