@@ -578,7 +578,7 @@
                             _result = _listener.handler.call(_listener.context || _listener.owner, _listener.owner, data, options);
                         }
                         if (false === _result) {
-                            return this;
+                            return false;
                         }
                     }
                 }

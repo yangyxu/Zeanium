@@ -204,6 +204,7 @@
                                 } catch (error) {
                                     t = t;
                                 }
+                                _XHR.abort();
                                 _defer.resolve(t, _XHR);
                                 this.fire('success', t);
                             } else {

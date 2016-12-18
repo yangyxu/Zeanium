@@ -1220,7 +1220,7 @@ if (__isServer) {
                             _result = _listener.handler.call(_listener.context || _listener.owner, _listener.owner, data, options);
                         }
                         if (false === _result) {
-                            return this;
+                            return false;
                         }
                     }
                 }
@@ -2244,6 +2244,7 @@ if (__isServer) {
                                 } catch (error) {
                                     t = t;
                                 }
+                                _XHR.abort();
                                 _defer.resolve(t, _XHR);
                                 this.fire('success', t);
                             } else {
@@ -2397,6 +2398,10 @@ if (__isServer) {
 
                 var _result = this._onExec && this._onExec(this);
                 if(_result===false){
+                    return false;
+                }
+
+                if(zn.GLOBAL.Store.fire('before') === false){
                     return false;
                 }
 
@@ -2618,8 +2623,10 @@ if (__isServer) {
         }
     });
 
-    zn.GLOBAL.Store = zn.Class({
-        static: true,
+
+
+    zn.GLOBAL.Store = new zn.Class({
+        events: ['before', 'after', 'success', 'error'],
         properties: {
             HOST: 'http://0.0.0.0:8080/'
         },
