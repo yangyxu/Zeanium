@@ -929,11 +929,15 @@ if (__isServer) {
          * @param dict {Object}
          * @param [options] {Any}
          */
-        sets: function (values, options) {
+        sets: function (values, options, callback) {
             if (values) {
+                var _value = null;
                 for (var _name in values) {
                     if (values.hasOwnProperty(_name)) {
-                        this.set(_name, values[_name], options);
+                        _value = values[_name];
+                        if((callback && callback(_value, _name, options))!==false){
+                            this.set(_name, _value, options);
+                        }
                     }
                 }
             }
@@ -1195,6 +1199,26 @@ if (__isServer) {
                         context: null
                     }
                 ];
+            }
+
+            return this;
+        },
+        offs: function (names) {
+            var _names = Array.prototype.slice.call(arguments);
+            if(_names.length){
+                zn.each(_names, function (name){
+                    if(this.__handlers__[name]){
+                        this.__handlers__[name] = [
+                            {
+                                owner: null,
+                                handler: null,
+                                context: null
+                            }
+                        ];
+                    }
+                }.bind(this));
+            }else {
+                this.__handlers__ = {};
             }
 
             return this;
@@ -2700,7 +2724,14 @@ if (__isServer) {
     };
 
     var Task = zn.Class({
-        events: [ 'init', 'start', 'stop', 'cancle', 'goNext', 'goPre' ],
+        events: [
+            'init',
+            'start',
+            'stop',
+            'cancle',
+            'goNext',
+            'goPre'
+        ],
         properties: {
             pre: null,
             next: null,
@@ -2792,7 +2823,14 @@ if (__isServer) {
                 }
             }
         },
-        events: ['before', 'after', 'success', 'error', 'complete', 'timeout' ],
+        events: [
+            'before',
+            'after',
+            'success',
+            'error',
+            'complete',
+            'timeout'
+        ],
         methods: {
             init: function (argv){
                 this.sets(argv);
@@ -2806,21 +2844,23 @@ if (__isServer) {
                     return this._XMLHttpRequest = new XMLHttpRequest(), this._XMLHttpRequest;
                 }
                 var e = "MSXML2.XMLHTTP",
-                    t = ["Microsoft.XMLHTTP", e, e + ".3.0", e + ".4.0", e + ".5.0", e + ".6.0"],
-                    _len = t.length;
-                for (var n = _len - 1; n > -1; n--) {
+                    t = ["Microsoft.XMLHTTP", e, e + ".3.0", e + ".4.0", e + ".5.0", e + ".6.0"];
+
+                for (var i = t.length - 1; i > -1; i--) {
                     try {
-                        return this._XMLHttpRequest = new ActiveXObject(t[n]), this._XMLHttpRequest;
-                    } catch (r) {
+                        return this._XMLHttpRequest = new ActiveXObject(t[i]), this._XMLHttpRequest;
+                    } catch (ex) {
                         continue;
                     }
                 }
             },
-            __onComplete: function(data){
+            __onComplete: function(XHR, data){
                 clearTimeout(this._timeoutID);
+                XHR.abort();
                 this._isRunning = false;
-                this.resetEvents();
-                this.fire('complete', data);
+                this.fire('complete', XHR, data);
+                this.fire('after', XHR, data);
+                this.offs();
             },
             __initRequestHeader: function (RH, args){
                 for(var k in args){
@@ -2828,12 +2868,7 @@ if (__isServer) {
                 }
             },
             resetEvents: function(){
-                this.off('before');
-                this.off('after');
-                this.off('success');
-                this.off('error');
-                this.off('complete');
-                this.off('timeout');
+                this.offs();
             },
             send: function (config){
                 if (this._isRunning){
@@ -2848,71 +2883,56 @@ if (__isServer) {
                 if(this.timeout){
                     this._timeoutID = setTimeout(function(){
                         if(_self._isRunning){
-                            _XHR.abort();
                             _self.fire('timeout', _self);
-                            _self.__onComplete('timeout');
+                            _self.__onComplete(_XHR, 'timeout');
                         }
                     }, this.timeout);
                 }
-                if (this.fire('before', this) !== false && this.url){
-                    var _url = this.url,
-                        _data = this.data,
-                        _method = this._method.toUpperCase();
-                    if(_method === 'GET'){
-                        if(_data){
-                            _url = _url + '?' + _data;
+
+                if(this.fire('before', this)===false || !this.url){
+                    return this.__onComplete(_XHR);
+                }
+
+                var _url = this.url,
+                    _data = this.data,
+                    _method = this._method.toUpperCase();
+                if(_method === 'GET'){
+                    if(_data){
+                        _url = _url + '?' + _data;
+                    }
+                    _data = null;
+                }
+                if(_XHR.readyState<2){
+                    _XHR.withCredentials = true;
+                }
+
+                _XHR.open(_method, _url, this.asyns);
+                _XHR.onreadystatechange = function (event){
+                    var _XHR = event.currentTarget;
+                    if (_XHR.readyState == 4) {
+                        var e = _XHR.status,
+                            t = _XHR.responseText,
+                            _ct = _XHR.getResponseHeader('Content-Type');
+
+                        if (e >= 200 && e < 300) {
+                            try {
+                                t = (_ct && _ct.indexOf('application/json')>=0) ? JSON.parse(t) : t;
+                            } catch (error) {
+                                t = t;
+                            }
+                            this.fire('success', t);
+                            _defer.resolve(t, _XHR);
+                        } else {
+                            this.fire('error', _XHR);
+                            _defer.reject(_XHR, t);
                         }
-                        _data = null;
+
+                        return this.__onComplete(_XHR, t), t;
                     }
-                    if(_XHR.readyState<2){
-                        _XHR.withCredentials = true;
-                    }
-                    _XHR.open(_method, _url, this.asyns);
-                    _XHR.onreadystatechange = function (event){
-                        var _XHR = event.currentTarget;
-                        if (_XHR.readyState == 4) {
-                            var e = _XHR.status,
-                                t = _XHR.responseText,
-                                _ct = _XHR.getResponseHeader('Content-Type');
-
-                            //_XHR.abort();   //TODO: This line code has some issue.
-                            if (e >= 400 && e < 500) {
-                                _defer.reject(_XHR);
-                                this.fire('error', 'Client Error Code: '+e);
-                                return;
-                            }
-                            if (e >= 500) {
-                                _defer.reject(_XHR);
-                                this.fire('error', 'Server Error code: '+e);
-                                return;
-                            }
-
-
-                            if (e >= 200 && e < 300) {
-                                try {
-                                    t = (_ct && _ct.indexOf('application/json')>=0) ? JSON.parse(t) : t;
-                                } catch (error) {
-                                    t = t;
-                                }
-                                _XHR.abort();
-                                _defer.resolve(t, _XHR);
-                                this.fire('success', t);
-                            } else {
-                                _XHR.abort();
-                                _defer.reject(_XHR);
-                                this.fire('error', _XHR);
-                            }
-                            this.__onComplete(_XHR);
-
-                            return t;
-                        }
-                    }.bind(this);
-                    this.__initRequestHeader(_XHR, this.headers);
-                    _XHR.send(_data);
-                    if(!this.asyns){
-                        this.__onComplete(_XHR);
-                    }
-                }else {
+                }.bind(this);
+                this.__initRequestHeader(_XHR, this.headers);
+                _XHR.send(_data);
+                if(!this.asyns){
                     this.__onComplete(_XHR);
                 }
 
@@ -3009,26 +3029,19 @@ if (__isServer) {
 
 (function (zn) {
 
-    var MIME = {
-        text: 'text/plain; charset=UTF-8',
-        html: 'text/html; charset=UTF-8',
-        xml: 'text/xml; charset=UTF-8',
-        form: 'application/x-www-form-urlencoded; charset=UTF-8',
-        json: 'application/json; charset=UTF-8',
-        javascript: 'text/javascript; charset=UTF-8'
-    };
-
     var HttpRequest = zn.Class({
-        events: [ 'init' ],
+        events: [
+            'init',
+            'before',
+            'success',
+            'error',
+            'complete'
+        ],
         properties: {
             url: null,
             data: null,
             method: 'POST',
-            headers: null,
-            onExec: null,
-            success: null,
-            error: null,
-            timeout: null
+            headers: null
         },
         methods: {
             init: function (url, data, method, headers) {
@@ -3038,91 +3051,105 @@ if (__isServer) {
                     method: method,
                     headers: headers
                 });
-                this.fire('init', this);
+
+                this.fire('init', this.gets());
             },
-            exec: function (url, data, method, headers){
-                var _url = url || this._url,
+            validateArgv: function (url, data, method, headers){
+                var _url = url || this._url || '',
                     _data = data || this._data || {},
                     _method = method || this._method,
                     _headers = headers || this._headers || {};
 
-                var _result = this._onExec && this._onExec(this);
+                return {
+                    url: _url,
+                    data: _data,
+                    method: _method,
+                    headers: _headers
+                };
+            },
+            exec: function (url, data, method, headers){
+                var _argv = this.validateArgv(url, data, method, headers);
+                var _result = Store.fire('before', _argv);
+                if(_result===false){
+                    return false;
+                }
+                _result = this.fire('before', _argv);
                 if(_result===false){
                     return false;
                 }
 
-                if(zn.GLOBAL.Store.fire('before') === false){
+                return _argv;
+            },
+            onComplete: function (xhr){
+                var _result = Store.fire('after', xhr);
+                if(_result===false){
                     return false;
                 }
-
-                return zn['$' + _method.toLowerCase()]({
-                    url: Store.fixURL(_url),
-                    data: _data,
-                    success: this._success,
-                    error: this._error,
-                    timeout: this._timeout,
-                    headers: _headers
-                });
+                _result = this.fire('complete', _argv);
+                if(_result===false){
+                    return false;
+                }
             },
-            refresh: function (){
-                this.exec();
+            refresh: function (url, data, method, headers){
+                return this.exec(url, data, method, headers);
             },
-            copyAndExt: function (data){
+            clone: function (data){
                 var _data = this._data;
                 if(typeof _data === 'object'){
-                    _data = JSON.parse(JSON.stringify(_data));
-                    for(var key in data){
-                        _data[key] = data[key];
-                    }
+                    _data = zn.extend(JSON.parse(JSON.stringify(_data)), data);
                 }else {
                     _data = data;
                 }
 
-                return new HttpRequest(this._url, _data, this._method);
+                return new this.constructor(this._url, _data, this._method, this._headers);
             },
-            ext: function (){
-                var _data = this._data;
-                for(var key in data){
-                    _data[key] = data[key];
-                }
-
-                return this;
+            extend: function (value){
+                return this._data = zn.extend(this._data, value), this;
+            },
+            overwrite: function (value){
+                return this._data = zn.overwrite(this._data, value), this;
             }
         }
     });
 
-    var Fetcher = zn.Class({
-        events: [ 'init' ],
-        properties: {
-            url: null,
-            data: null,
-            method: 'POST',
-            headers: null,
-            onExec: null,
-            success: null,
-            error: null
-        },
+    var XHR = zn.Class(HttpRequest, {
         methods: {
-            init: function (url, data, method, headers) {
-                this.sets({
-                    url: url,
-                    data: data,
-                    method: method,
-                    headers: headers
-                });
-                this.fire('init', this);
-            },
             exec: function (url, data, method, headers){
-                var _self = this,
-                    _url = url || this._url,
-                    _data = data || this._data || {},
-                    _method = method || this._method,
-                    _headers = headers || this._headers || {};
-
-                var _result = this._onExec && this._onExec(this);
-                if(_result===false){
+                var _argv = this.super(url, data, method, headers);
+                if(_argv===false){
                     return false;
                 }
+
+                return zn['$' + _argv.method.toLowerCase()]({
+                    url: Store.fixURL(_argv.url),
+                    data: _argv.data,
+                    headers: _argv.headers,
+                    success: function (sender, data, xhr){
+                        this.fire('success', data, xhr);
+                    }.bind(this),
+                    error: function (sender, xhr){
+                        this.fire('error', xhr);
+                    }.bind(this),
+                    complete: function (sender, xhr){
+                        this.onComplete(xhr);
+                    }.bind(this)
+                });
+            }
+        }
+    });
+
+    var Fetcher = zn.Class(HttpRequest, {
+        methods: {
+            exec: function (url, data, method, headers){
+                var _argv = this.super(url, data, method, headers);
+                if(_argv===false){
+                    return false;
+                }
+                var _url = _argv.url,
+                    _method = _argv.method,
+                    _data = _argv.data,
+                    _headers = _argv.headers,
+                    _self = this;
 
                 switch (_method.toUpperCase()) {
                     case "POST":
@@ -3150,7 +3177,7 @@ if (__isServer) {
                 }
 
                 return new Promise(function (resolve, reject) {
-                    fetch(_url, {
+                    fetch(Store.fixURL(_url), {
                         method: _method.toUpperCase(),
                         body: _data,
                         headers: _headers
@@ -3159,49 +3186,22 @@ if (__isServer) {
                         return response.json();
                     })
                     .then(function (responseData) {
-                        if(_self._success){
-                            _self._success(responseData);
-                        }
+                        _self.fire('success', responseData);
+                        _self.onComplete(responseData);
                         resolve(responseData);
                     })
                     .catch(function (error) {
-                        if(_self._error){
-                            _self._error(error);
-                        }
+                        _self.fire('error', error);
+                        _self.onComplete(error);
                         reject(error);
                     });
                 });
-            },
-            refresh: function (){
-                this.exec();
-            },
-            copyAndExt: function (data){
-                var _data = this._data;
-                if(typeof _data === 'object'){
-                    _data = JSON.parse(JSON.stringify(_data));
-                    for(var key in data){
-                        _data[key] = data[key];
-                    }
-                }else {
-                    _data = data;
-                }
-
-                return new Fetcher(this._url, _data, this._method);
-            },
-            ext: function (){
-                var _data = this._data;
-                for(var key in data){
-                    _data[key] = data[key];
-                }
-
-                return this;
             }
         }
     });
 
-
     var DataSource = zn.Class({
-        events: [ 'init', 'exec' ],
+        events: [ 'init', 'before', 'after' ],
         properties: {
             data: null,
             argv: {
@@ -3228,106 +3228,111 @@ if (__isServer) {
                 this.exec();
             },
             exec: function (){
-                var _data = this._data;
+                var _data = this._data,
+                    _self = this;
             	if(!_data){
-                    return;
+                    return false;
                 }
-                var _temp = this._argv.onSubmitBefore && this._argv.onSubmitBefore(_data, this._argv);
+
+                if((this._argv.onExec && this._argv.onExec(_data))===false){
+                    return false;
+                }
+
+                var _temp = this.fire('before', _data);
                 if(_temp===false){
-                    return;
+                    return false;
                 }
                 if(_temp!==undefined){
                     _data = _temp;
                 }
 
             	if(_data.__id__){
-                    if(!_data._onExec){
-                        _data._onExec = this._argv.onExec;
-                    }
-                    _data._success = function (sender, data){
-                        var _temp = (Store._success && Store._success(data));
-                        if(_temp!==false){
-                            if(this._argv.onSuccess){
-                                this._argv.onSuccess(data);
-                            }
+                    _data.on('success', function (sender, data){
+                        if(_self._argv.onSuccess){
+                            _self._argv.onSuccess(data);
                         }
-            		}.bind(this);
-                    _data._error = function (sender, data){
-                        var _temp = (Store._error && Store._error(data));
-                        if(_temp!==false){
-                            if(this._argv.onError){
-                                this._argv.onError(data);
-                            }
+                    }).on('error', function (sender, data){
+                        if(_self._argv.onError){
+                            _self._argv.onSuccess(data);
                         }
-            		}.bind(this);
-            		_data.exec();
+                    }).on('complete', function (sender, data){
+                        if(_self._argv.onComplete){
+                            _self._argv.onComplete(data);
+                        }
+                    }).exec();
             	} else {
-                    if((this._argv.onExec && this._argv.onExec(_data))===false){
-                        return false;
-                    }
-                    if(this._argv.onSuccess){
-                        this._argv.onSuccess(data);
-                    }
+                    return new Promise(function (resolve, reject) {
+                        if(_data){
+                            if(Store.fire('success', _data) === false){
+                                return false;
+                            }
+                            if(_self._argv.onSuccess){
+                                _self._argv.onSuccess(_data);
+                            }
+                            resolve(_data);
+                        }else {
+                            if(Store.fire('error', _data) === false){
+                                return false;
+                            }
+                            if(_self._argv.onError){
+                                _self._argv.onError(_data);
+                            }
+                            reject(_data);
+                        }
+                    });
             	}
             }
         }
     });
 
-
-
     zn.GLOBAL.Store = new zn.Class({
-        events: ['before', 'after', 'success', 'error'],
+        events: ['before', 'success', 'error', 'timeout', 'after'],
         properties: {
-            HOST: 'http://0.0.0.0:8080/'
+            host: 'http://0.0.0.0:8080/',
+            engine: {
+                set: function (value){
+                    this._engine = value;
+                },
+                get: function (){
+                    return (this._engine=='Fetcher'?Fetcher:XHR);
+                }
+            },
+            headers: {}
         },
         methods: {
-            requestHandler: function (success, error){
-                this._success = success;
-                this._error = error;
-            },
             request: function (url, data, method, headers){
-                return new HttpRequest(url, data, method, headers);
+                return new this.get('engine')(url, data, method, headers);
             },
             post: function (url, data, headers){
-                return new HttpRequest(url, data, "POST", headers);
+                return this.request(url, data, "POST", headers);
             },
             delete: function (url, data, headers){
-                return new HttpRequest(url, data, "DELETE", headers);
+                return this.request(url, data, "DELETE", headers);
             },
             put: function (url, data, headers){
-                return new HttpRequest(url, data, "PUT", headers);
+                return this.request(url, data, "PUT", headers);
             },
             get: function (url, data, headers){
-                return new HttpRequest(this.formatURL(url, data), data, "GET", headers);
-            },
-            fetch: function (url, data, method, headers){
-                return new Fetcher(url, data, method, headers);
-            },
-            fetchPost: function (url, data, headers){
-                return new Fetcher(url, data, "POST", headers);
-            },
-            fetchGet: function (url, data, headers){
-                return new Fetcher(this.formatURL(url, data), data, "GET", headers);
+                var _argv = [];
+                zn.each(data, function (value, key){
+                    _argv.push(key + '=' + (zn.is(value, 'object')?JSON.stringify(value):value));
+                });
+
+                return this.request(url, _argv.join('&'), "GET", headers);
             },
             setHost: function (value){
-                this._HOST = value;
+                this._host = value;
             },
             getHost: function (){
-                return this._HOST;
+                return this._host;
             },
             fixURL: function (url) {
                 if(!url){
                     return '';
                 }
-                if(url && url.indexOf('http://') === -1){
-                    url = this._HOST + url;
-                }
 
-                return url;
-            },
-            formatURL: function (url, data){
-                for(var key in data){
-                    url = url.replace(new RegExp('{' + key + '}', 'gi'), data[key]||'');
+                if(url && url.indexOf('http://') === -1){
+                    url = this._host + url;
                 }
 
                 return url;

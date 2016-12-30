@@ -1,25 +1,18 @@
 (function (zn) {
 
-    var MIME = {
-        text: 'text/plain; charset=UTF-8',
-        html: 'text/html; charset=UTF-8',
-        xml: 'text/xml; charset=UTF-8',
-        form: 'application/x-www-form-urlencoded; charset=UTF-8',
-        json: 'application/json; charset=UTF-8',
-        javascript: 'text/javascript; charset=UTF-8'
-    };
-
     var HttpRequest = zn.Class({
-        events: [ 'init' ],
+        events: [
+            'init',
+            'before',
+            'success',
+            'error',
+            'complete'
+        ],
         properties: {
             url: null,
             data: null,
             method: 'POST',
-            headers: null,
-            onExec: null,
-            success: null,
-            error: null,
-            timeout: null
+            headers: null
         },
         methods: {
             init: function (url, data, method, headers) {
@@ -29,87 +22,105 @@
                     method: method,
                     headers: headers
                 });
-                this.fire('init', this);
+
+                this.fire('init', this.gets());
             },
-            exec: function (url, data, method, headers){
-                var _url = url || this._url,
+            validateArgv: function (url, data, method, headers){
+                var _url = url || this._url || '',
                     _data = data || this._data || {},
                     _method = method || this._method,
                     _headers = headers || this._headers || {};
 
-                var _result = this._onExec && this._onExec(this);
+                return {
+                    url: _url,
+                    data: _data,
+                    method: _method,
+                    headers: _headers
+                };
+            },
+            exec: function (url, data, method, headers){
+                var _argv = this.validateArgv(url, data, method, headers);
+                var _result = Store.fire('before', _argv);
+                if(_result===false){
+                    return false;
+                }
+                _result = this.fire('before', _argv);
                 if(_result===false){
                     return false;
                 }
 
-                return zn['$' + _method.toLowerCase()]({
-                    url: Store.fixURL(_url),
-                    data: _data,
-                    success: this._success,
-                    error: this._error,
-                    timeout: this._timeout,
-                    headers: _headers
-                });
+                return _argv;
             },
-            refresh: function (){
-                this.exec();
+            onComplete: function (xhr){
+                var _result = Store.fire('after', xhr);
+                if(_result===false){
+                    return false;
+                }
+                _result = this.fire('complete', _argv);
+                if(_result===false){
+                    return false;
+                }
             },
-            copyAndExt: function (data){
+            refresh: function (url, data, method, headers){
+                return this.exec(url, data, method, headers);
+            },
+            clone: function (data){
                 var _data = this._data;
                 if(typeof _data === 'object'){
-                    _data = JSON.parse(JSON.stringify(_data));
-                    for(var key in data){
-                        _data[key] = data[key];
-                    }
+                    _data = zn.extend(JSON.parse(JSON.stringify(_data)), data);
                 }else {
                     _data = data;
                 }
 
-                return new HttpRequest(this._url, _data, this._method);
+                return new this.constructor(this._url, _data, this._method, this._headers);
             },
-            ext: function (){
-                var _data = this._data;
-                for(var key in data){
-                    _data[key] = data[key];
-                }
-
-                return this;
+            extend: function (value){
+                return this._data = zn.extend(this._data, value), this;
+            },
+            overwrite: function (value){
+                return this._data = zn.overwrite(this._data, value), this;
             }
         }
     });
 
-    var Fetcher = zn.Class({
-        events: [ 'init' ],
-        properties: {
-            url: null,
-            data: null,
-            method: 'POST',
-            headers: null,
-            onExec: null,
-            success: null,
-            error: null
-        },
+    var XHR = zn.Class(HttpRequest, {
         methods: {
-            init: function (url, data, method, headers) {
-                this.sets({
-                    url: url,
-                    data: data,
-                    method: method,
-                    headers: headers
-                });
-                this.fire('init', this);
-            },
             exec: function (url, data, method, headers){
-                var _self = this,
-                    _url = url || this._url,
-                    _data = data || this._data || {},
-                    _method = method || this._method,
-                    _headers = headers || this._headers || {};
-
-                var _result = this._onExec && this._onExec(this);
-                if(_result===false){
+                var _argv = this.super(url, data, method, headers);
+                if(_argv===false){
                     return false;
                 }
+
+                return zn['$' + _argv.method.toLowerCase()]({
+                    url: Store.fixURL(_argv.url),
+                    data: _argv.data,
+                    headers: _argv.headers,
+                    success: function (sender, data, xhr){
+                        this.fire('success', data, xhr);
+                    }.bind(this),
+                    error: function (sender, xhr){
+                        this.fire('error', xhr);
+                    }.bind(this),
+                    complete: function (sender, xhr){
+                        this.onComplete(xhr);
+                    }.bind(this)
+                });
+            }
+        }
+    });
+
+    var Fetcher = zn.Class(HttpRequest, {
+        methods: {
+            exec: function (url, data, method, headers){
+                var _argv = this.super(url, data, method, headers);
+                if(_argv===false){
+                    return false;
+                }
+                var _url = _argv.url,
+                    _method = _argv.method,
+                    _data = _argv.data,
+                    _headers = _argv.headers,
+                    _self = this;
 
                 switch (_method.toUpperCase()) {
                     case "POST":
@@ -137,7 +148,7 @@
                 }
 
                 return new Promise(function (resolve, reject) {
-                    fetch(_url, {
+                    fetch(Store.fixURL(_url), {
                         method: _method.toUpperCase(),
                         body: _data,
                         headers: _headers
@@ -146,49 +157,22 @@
                         return response.json();
                     })
                     .then(function (responseData) {
-                        if(_self._success){
-                            _self._success(responseData);
-                        }
+                        _self.fire('success', responseData);
+                        _self.onComplete(responseData);
                         resolve(responseData);
                     })
                     .catch(function (error) {
-                        if(_self._error){
-                            _self._error(error);
-                        }
+                        _self.fire('error', error);
+                        _self.onComplete(error);
                         reject(error);
                     });
                 });
-            },
-            refresh: function (){
-                this.exec();
-            },
-            copyAndExt: function (data){
-                var _data = this._data;
-                if(typeof _data === 'object'){
-                    _data = JSON.parse(JSON.stringify(_data));
-                    for(var key in data){
-                        _data[key] = data[key];
-                    }
-                }else {
-                    _data = data;
-                }
-
-                return new Fetcher(this._url, _data, this._method);
-            },
-            ext: function (){
-                var _data = this._data;
-                for(var key in data){
-                    _data[key] = data[key];
-                }
-
-                return this;
             }
         }
     });
 
-
     var DataSource = zn.Class({
-        events: [ 'init', 'exec' ],
+        events: [ 'init', 'before', 'after' ],
         properties: {
             data: null,
             argv: {
@@ -215,104 +199,115 @@
                 this.exec();
             },
             exec: function (){
-                var _data = this._data;
+                var _data = this._data,
+                    _self = this;
             	if(!_data){
-                    return;
+                    return false;
                 }
-                var _temp = this._argv.onSubmitBefore && this._argv.onSubmitBefore(_data, this._argv);
+
+                if((this._argv.onExec && this._argv.onExec(_data))===false){
+                    return false;
+                }
+
+                var _temp = this.fire('before', _data);
                 if(_temp===false){
-                    return;
+                    return false;
                 }
                 if(_temp!==undefined){
                     _data = _temp;
                 }
 
             	if(_data.__id__){
-                    if(!_data._onExec){
-                        _data._onExec = this._argv.onExec;
-                    }
-                    _data._success = function (sender, data){
-                        var _temp = (Store._success && Store._success(data));
-                        if(_temp!==false){
-                            if(this._argv.onSuccess){
-                                this._argv.onSuccess(data);
-                            }
+                    _data.on('success', function (sender, data){
+                        if(_self._argv.onSuccess){
+                            _self._argv.onSuccess(data);
                         }
-            		}.bind(this);
-                    _data._error = function (sender, data){
-                        var _temp = (Store._error && Store._error(data));
-                        if(_temp!==false){
-                            if(this._argv.onError){
-                                this._argv.onError(data);
-                            }
+                    }).on('error', function (sender, data){
+                        if(_self._argv.onError){
+                            _self._argv.onSuccess(data);
                         }
-            		}.bind(this);
-            		_data.exec();
+                    }).on('complete', function (sender, data){
+                        if(_self._argv.onComplete){
+                            _self._argv.onComplete(data);
+                        }
+                    }).exec();
             	} else {
-                    if((this._argv.onExec && this._argv.onExec(_data))===false){
-                        return false;
-                    }
-                    if(this._argv.onSuccess){
-                        this._argv.onSuccess(data);
-                    }
+                    return new Promise(function (resolve, reject) {
+                        if(_data){
+                            if(Store.fire('success', _data) === false){
+                                return false;
+                            }
+                            if(_self._argv.onSuccess){
+                                _self._argv.onSuccess(_data);
+                            }
+                            resolve(_data);
+                        }else {
+                            if(Store.fire('error', _data) === false){
+                                return false;
+                            }
+                            if(_self._argv.onError){
+                                _self._argv.onError(_data);
+                            }
+                            reject(_data);
+                        }
+
+                        if(_self._argv.onComplete){
+                            _self._argv.onComplete(_data);
+                        }
+                    });
             	}
             }
         }
     });
 
-    zn.GLOBAL.Store = zn.Class({
-        static: true,
+    zn.GLOBAL.Store = new zn.Class({
+        events: ['before', 'success', 'error', 'timeout', 'after'],
         properties: {
-            HOST: 'http://0.0.0.0:8080/'
+            host: 'http://0.0.0.0:8080/',
+            engine: {
+                set: function (value){
+                    this._engine = value;
+                },
+                get: function (){
+                    return (this._engine=='Fetcher'?Fetcher:XHR);
+                }
+            },
+            headers: {}
         },
         methods: {
-            requestHandler: function (success, error){
-                this._success = success;
-                this._error = error;
-            },
             request: function (url, data, method, headers){
-                return new HttpRequest(url, data, method, headers);
+                return new this.get('engine')(url, data, method, headers);
             },
             post: function (url, data, headers){
-                return new HttpRequest(url, data, "POST", headers);
+                return this.request(url, data, "POST", headers);
             },
             delete: function (url, data, headers){
-                return new HttpRequest(url, data, "DELETE", headers);
+                return this.request(url, data, "DELETE", headers);
             },
             put: function (url, data, headers){
-                return new HttpRequest(url, data, "PUT", headers);
+                return this.request(url, data, "PUT", headers);
             },
             get: function (url, data, headers){
-                return new HttpRequest(this.formatURL(url, data), data, "GET", headers);
-            },
-            fetch: function (url, data, method, headers){
-                return new Fetcher(url, data, method, headers);
-            },
-            fetchPost: function (url, data, headers){
-                return new Fetcher(url, data, "POST", headers);
-            },
-            fetchGet: function (url, data, headers){
-                return new Fetcher(this.formatURL(url, data), data, "GET", headers);
+                var _argv = [];
+                zn.each(data, function (value, key){
+                    _argv.push(key + '=' + (zn.is(value, 'object')?JSON.stringify(value):value));
+                });
+
+                return this.request(url, _argv.join('&'), "GET", headers);
             },
             setHost: function (value){
-                this._HOST = value;
+                this._host = value;
             },
             getHost: function (){
-                return this._HOST;
+                return this._host;
             },
             fixURL: function (url) {
                 if(!url){
                     return '';
                 }
-                if(url && url.indexOf('http://') === -1){
-                    url = this._HOST + url;
-                }
 
-                return url;
-            },
-            formatURL: function (url, data){
-                for(var key in data){
-                    url = url.replace(new RegExp('{' + key + '}', 'gi'), data[key]||'');
+                if(url && url.indexOf('http://') === -1){
+                    url = this._host + url;
                 }
 
                 return url;

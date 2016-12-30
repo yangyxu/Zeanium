@@ -287,11 +287,15 @@
          * @param dict {Object}
          * @param [options] {Any}
          */
-        sets: function (values, options) {
+        sets: function (values, options, callback) {
             if (values) {
+                var _value = null;
                 for (var _name in values) {
                     if (values.hasOwnProperty(_name)) {
-                        this.set(_name, values[_name], options);
+                        _value = values[_name];
+                        if((callback && callback(_value, _name, options))!==false){
+                            this.set(_name, _value, options);
+                        }
                     }
                 }
             }
@@ -553,6 +557,26 @@
                         context: null
                     }
                 ];
+            }
+
+            return this;
+        },
+        offs: function (names) {
+            var _names = Array.prototype.slice.call(arguments);
+            if(_names.length){
+                zn.each(_names, function (name){
+                    if(this.__handlers__[name]){
+                        this.__handlers__[name] = [
+                            {
+                                owner: null,
+                                handler: null,
+                                context: null
+                            }
+                        ];
+                    }
+                }.bind(this));
+            }else {
+                this.__handlers__ = {};
             }
 
             return this;

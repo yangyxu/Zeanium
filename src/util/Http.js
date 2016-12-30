@@ -10,7 +10,14 @@
     };
 
     var Task = zn.Class({
-        events: [ 'init', 'start', 'stop', 'cancle', 'goNext', 'goPre' ],
+        events: [
+            'init',
+            'start',
+            'stop',
+            'cancle',
+            'goNext',
+            'goPre'
+        ],
         properties: {
             pre: null,
             next: null,
@@ -102,7 +109,14 @@
                 }
             }
         },
-        events: ['before', 'after', 'success', 'error', 'complete', 'timeout' ],
+        events: [
+            'before',
+            'after',
+            'success',
+            'error',
+            'complete',
+            'timeout'
+        ],
         methods: {
             init: function (argv){
                 this.sets(argv);
@@ -116,21 +130,23 @@
                     return this._XMLHttpRequest = new XMLHttpRequest(), this._XMLHttpRequest;
                 }
                 var e = "MSXML2.XMLHTTP",
-                    t = ["Microsoft.XMLHTTP", e, e + ".3.0", e + ".4.0", e + ".5.0", e + ".6.0"],
-                    _len = t.length;
-                for (var n = _len - 1; n > -1; n--) {
+                    t = ["Microsoft.XMLHTTP", e, e + ".3.0", e + ".4.0", e + ".5.0", e + ".6.0"];
+
+                for (var i = t.length - 1; i > -1; i--) {
                     try {
-                        return this._XMLHttpRequest = new ActiveXObject(t[n]), this._XMLHttpRequest;
-                    } catch (r) {
+                        return this._XMLHttpRequest = new ActiveXObject(t[i]), this._XMLHttpRequest;
+                    } catch (ex) {
                         continue;
                     }
                 }
             },
-            __onComplete: function(data){
+            __onComplete: function(XHR, data){
                 clearTimeout(this._timeoutID);
+                XHR.abort();
                 this._isRunning = false;
-                this.resetEvents();
-                this.fire('complete', data);
+                this.fire('complete', XHR, data);
+                this.fire('after', XHR, data);
+                this.offs();
             },
             __initRequestHeader: function (RH, args){
                 for(var k in args){
@@ -138,12 +154,7 @@
                 }
             },
             resetEvents: function(){
-                this.off('before');
-                this.off('after');
-                this.off('success');
-                this.off('error');
-                this.off('complete');
-                this.off('timeout');
+                this.offs();
             },
             send: function (config){
                 if (this._isRunning){
@@ -158,71 +169,56 @@
                 if(this.timeout){
                     this._timeoutID = setTimeout(function(){
                         if(_self._isRunning){
-                            _XHR.abort();
                             _self.fire('timeout', _self);
-                            _self.__onComplete('timeout');
+                            _self.__onComplete(_XHR, 'timeout');
                         }
                     }, this.timeout);
                 }
-                if (this.fire('before', this) !== false && this.url){
-                    var _url = this.url,
-                        _data = this.data,
-                        _method = this._method.toUpperCase();
-                    if(_method === 'GET'){
-                        if(_data){
-                            _url = _url + '?' + _data;
+
+                if(this.fire('before', this)===false || !this.url){
+                    return this.__onComplete(_XHR);
+                }
+
+                var _url = this.url,
+                    _data = this.data,
+                    _method = this._method.toUpperCase();
+                if(_method === 'GET'){
+                    if(_data){
+                        _url = _url + '?' + _data;
+                    }
+                    _data = null;
+                }
+                if(_XHR.readyState<2){
+                    _XHR.withCredentials = true;
+                }
+
+                _XHR.open(_method, _url, this.asyns);
+                _XHR.onreadystatechange = function (event){
+                    var _XHR = event.currentTarget;
+                    if (_XHR.readyState == 4) {
+                        var e = _XHR.status,
+                            t = _XHR.responseText,
+                            _ct = _XHR.getResponseHeader('Content-Type');
+
+                        if (e >= 200 && e < 300) {
+                            try {
+                                t = (_ct && _ct.indexOf('application/json')>=0) ? JSON.parse(t) : t;
+                            } catch (error) {
+                                t = t;
+                            }
+                            this.fire('success', t);
+                            _defer.resolve(t, _XHR);
+                        } else {
+                            this.fire('error', _XHR);
+                            _defer.reject(_XHR, t);
                         }
-                        _data = null;
+
+                        return this.__onComplete(_XHR, t), t;
                     }
-                    if(_XHR.readyState<2){
-                        _XHR.withCredentials = true;
-                    }
-                    _XHR.open(_method, _url, this.asyns);
-                    _XHR.onreadystatechange = function (event){
-                        var _XHR = event.currentTarget;
-                        if (_XHR.readyState == 4) {
-                            var e = _XHR.status,
-                                t = _XHR.responseText,
-                                _ct = _XHR.getResponseHeader('Content-Type');
-
-                            //_XHR.abort();   //TODO: This line code has some issue.
-                            if (e >= 400 && e < 500) {
-                                _defer.reject(_XHR);
-                                this.fire('error', 'Client Error Code: '+e);
-                                return;
-                            }
-                            if (e >= 500) {
-                                _defer.reject(_XHR);
-                                this.fire('error', 'Server Error code: '+e);
-                                return;
-                            }
-
-
-                            if (e >= 200 && e < 300) {
-                                try {
-                                    t = (_ct && _ct.indexOf('application/json')>=0) ? JSON.parse(t) : t;
-                                } catch (error) {
-                                    t = t;
-                                }
-                                _XHR.abort();
-                                _defer.resolve(t, _XHR);
-                                this.fire('success', t);
-                            } else {
-                                _XHR.abort();
-                                _defer.reject(_XHR);
-                                this.fire('error', _XHR);
-                            }
-                            this.__onComplete(_XHR);
-
-                            return t;
-                        }
-                    }.bind(this);
-                    this.__initRequestHeader(_XHR, this.headers);
-                    _XHR.send(_data);
-                    if(!this.asyns){
-                        this.__onComplete(_XHR);
-                    }
-                }else {
+                }.bind(this);
+                this.__initRequestHeader(_XHR, this.headers);
+                _XHR.send(_data);
+                if(!this.asyns){
                     this.__onComplete(_XHR);
                 }
 
