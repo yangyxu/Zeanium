@@ -28,7 +28,7 @@
             validateArgv: function (url, data, method, headers){
                 var _url = url || this._url || '',
                     _data = data || this._data || {},
-                    _method = method || this._method,
+                    _method = method || this._method || 'POST',
                     _headers = headers || this._headers || {};
 
                 return {
@@ -56,7 +56,7 @@
                 if(_result===false){
                     return false;
                 }
-                _result = this.fire('complete', _argv);
+                _result = this.fire('complete', xhr);
                 if(_result===false){
                     return false;
                 }
@@ -85,6 +85,9 @@
 
     var XHR = zn.Class(HttpRequest, {
         methods: {
+            init: function (url, data, method, headers){
+                this.super(url, data, method, headers);
+            },
             exec: function (url, data, method, headers){
                 var _argv = this.super(url, data, method, headers);
                 if(_argv===false){
@@ -111,6 +114,9 @@
 
     var Fetcher = zn.Class(HttpRequest, {
         methods: {
+            init: function (url, data, method, headers){
+                this.super(url, data, method, headers);
+            },
             exec: function (url, data, method, headers){
                 var _argv = this.super(url, data, method, headers);
                 if(_argv===false){
@@ -250,18 +256,14 @@
                             }
                             reject(_data);
                         }
-
-                        if(_self._argv.onComplete){
-                            _self._argv.onComplete(_data);
-                        }
                     });
             	}
             }
         }
     });
 
-    zn.GLOBAL.Store = new zn.Class({
-        events: ['before', 'success', 'error', 'timeout', 'after'],
+    var StoreClass = zn.Class({
+        events: ['before', 'after'],
         properties: {
             host: 'http://0.0.0.0:8080/',
             engine: {
@@ -269,14 +271,25 @@
                     this._engine = value;
                 },
                 get: function (){
-                    return (this._engine=='Fetcher'?Fetcher:XHR);
+                    if(this._engine=='Fetcher'){
+                        return Fetcher;
+                    }else {
+                        return XHR;
+                    }
                 }
             },
             headers: {}
         },
         methods: {
             request: function (url, data, method, headers){
-                return new this.get('engine')(url, data, method, headers);
+                var _class = null;
+                if(this._engine=='Fetcher'){
+                    _class = Fetcher;
+                }else {
+                    _class = XHR;
+                }
+
+                return new _class(url, data, method, headers);
             },
             post: function (url, data, headers){
                 return this.request(url, data, "POST", headers);
@@ -318,4 +331,5 @@
         }
     });
 
+    zn.GLOBAL.Store = new StoreClass();
 })(zn);

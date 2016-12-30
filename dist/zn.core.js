@@ -2890,7 +2890,7 @@ if (__isServer) {
                 }
 
                 if(this.fire('before', this)===false || !this.url){
-                    return this.__onComplete(_XHR);
+                    return this.__onComplete(_XHR), _defer.promise;
                 }
 
                 var _url = this.url,
@@ -3057,7 +3057,7 @@ if (__isServer) {
             validateArgv: function (url, data, method, headers){
                 var _url = url || this._url || '',
                     _data = data || this._data || {},
-                    _method = method || this._method,
+                    _method = method || this._method || 'POST',
                     _headers = headers || this._headers || {};
 
                 return {
@@ -3085,7 +3085,7 @@ if (__isServer) {
                 if(_result===false){
                     return false;
                 }
-                _result = this.fire('complete', _argv);
+                _result = this.fire('complete', xhr);
                 if(_result===false){
                     return false;
                 }
@@ -3114,6 +3114,9 @@ if (__isServer) {
 
     var XHR = zn.Class(HttpRequest, {
         methods: {
+            init: function (url, data, method, headers){
+                this.super(url, data, method, headers);
+            },
             exec: function (url, data, method, headers){
                 var _argv = this.super(url, data, method, headers);
                 if(_argv===false){
@@ -3140,6 +3143,9 @@ if (__isServer) {
 
     var Fetcher = zn.Class(HttpRequest, {
         methods: {
+            init: function (url, data, method, headers){
+                this.super(url, data, method, headers);
+            },
             exec: function (url, data, method, headers){
                 var _argv = this.super(url, data, method, headers);
                 if(_argv===false){
@@ -3285,8 +3291,8 @@ if (__isServer) {
         }
     });
 
-    zn.GLOBAL.Store = new zn.Class({
-        events: ['before', 'success', 'error', 'timeout', 'after'],
+    var StoreClass = zn.Class({
+        events: ['before', 'after'],
         properties: {
             host: 'http://0.0.0.0:8080/',
             engine: {
@@ -3294,14 +3300,25 @@ if (__isServer) {
                     this._engine = value;
                 },
                 get: function (){
-                    return (this._engine=='Fetcher'?Fetcher:XHR);
+                    if(this._engine=='Fetcher'){
+                        return Fetcher;
+                    }else {
+                        return XHR;
+                    }
                 }
             },
             headers: {}
         },
         methods: {
             request: function (url, data, method, headers){
-                return new this.get('engine')(url, data, method, headers);
+                var _class = null;
+                if(this._engine=='Fetcher'){
+                    _class = Fetcher;
+                }else {
+                    _class = XHR;
+                }
+
+                return new _class(url, data, method, headers);
             },
             post: function (url, data, headers){
                 return this.request(url, data, "POST", headers);
@@ -3343,4 +3360,5 @@ if (__isServer) {
         }
     });
 
+    zn.GLOBAL.Store = new StoreClass();
 })(zn);

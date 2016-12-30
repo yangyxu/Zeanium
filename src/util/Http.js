@@ -176,7 +176,7 @@
                 }
 
                 if(this.fire('before', this)===false || !this.url){
-                    return this.__onComplete(_XHR);
+                    return this.__onComplete(_XHR), _defer.promise;
                 }
 
                 var _url = this.url,
