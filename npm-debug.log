@@ -1,0 +1,114 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/usr/local/bin/node', '/usr/local/bin/npm', 'publish' ]
+2 info using npm@3.8.3
+3 info using node@v5.10.1
+4 verbose publish [ '.' ]
+5 silly cache add args [ '.', null ]
+6 verbose cache add spec .
+7 silly cache add parsed spec Result {
+7 silly cache add   raw: '.',
+7 silly cache add   scope: null,
+7 silly cache add   name: null,
+7 silly cache add   rawSpec: '.',
+7 silly cache add   spec: '/Code/Git/YY/ZN/zeanium',
+7 silly cache add   type: 'directory' }
+8 verbose addLocalDirectory /Users/yangyxu/.npm/zeanium/1.1.0/package.tgz not in flight; packing
+9 verbose correctMkdir /Users/yangyxu/.npm correctMkdir not in flight; initializing
+10 info lifecycle zeanium@1.1.0~prepublish: zeanium@1.1.0
+11 silly lifecycle zeanium@1.1.0~prepublish: no script for prepublish, continuing
+12 verbose tar pack [ '/Users/yangyxu/.npm/zeanium/1.1.0/package.tgz',
+12 verbose tar pack   '/Code/Git/YY/ZN/zeanium' ]
+13 verbose tarball /Users/yangyxu/.npm/zeanium/1.1.0/package.tgz
+14 verbose folder /Code/Git/YY/ZN/zeanium
+15 verbose addLocalTarball adding from inside cache /Users/yangyxu/.npm/zeanium/1.1.0/package.tgz
+16 verbose correctMkdir /Users/yangyxu/.npm correctMkdir not in flight; initializing
+17 silly cache afterAdd zeanium@1.1.0
+18 verbose afterAdd /Users/yangyxu/.npm/zeanium/1.1.0/package/package.json not in flight; writing
+19 verbose correctMkdir /Users/yangyxu/.npm correctMkdir not in flight; initializing
+20 verbose afterAdd /Users/yangyxu/.npm/zeanium/1.1.0/package/package.json written
+21 silly publish { name: 'zeanium',
+21 silly publish   version: '1.1.0',
+21 silly publish   description: 'Javascript framework for Node.js and Browser. Simple MVVM model in data and view module.',
+21 silly publish   main: 'index.js',
+21 silly publish   directories: { test: 'test' },
+21 silly publish   scripts: { test: 'qunit', build: 'grunt --force' },
+21 silly publish   author: { name: 'yangyxu' },
+21 silly publish   email: '945758912@qq.com',
+21 silly publish   repository:
+21 silly publish    { type: 'git',
+21 silly publish      url: 'git+https://github.com/yangyxu/Zeanium.git' },
+21 silly publish   keywords:
+21 silly publish    [ 'JavaScript',
+21 silly publish      'OOP',
+21 silly publish      'Node.js',
+21 silly publish      'MVVM',
+21 silly publish      'Model',
+21 silly publish      'Class',
+21 silly publish      'Framework' ],
+21 silly publish   bugs: { url: 'https://github.com/yangyxu/Zeanium/issues' },
+21 silly publish   homepage: 'https://github.com/yangyxu/Zeanium#readme',
+21 silly publish   license: 'MIT',
+21 silly publish   readme: '# Zeanium\n\n[简体中文文档](https://github.com/yangyxu/Zeanium/blob/master/README_zh-CN.md)\n\n\n## Introduction\n\nZeanium-Node is based on Zeanium-Core(https://github.com/yangyxu/Zeanium), it is back-end solution for node.js. Provide `cache`、`database`、`io`、`net`、`parser`、`session`、`template` features.\n\nIt\'s back-end mvc framework, provide integrated solutions.\n\n```js\n//define database model\nzn.define(function () {\n\n    //common data model\n    var model = zn.db.common.model;\n    //zn.Model is define.\n    return zn.Model("zn_rights_user", {\n        mixins: [\n            model.Base\n        ],\n        //define property\n        properties: {\n            name: {\n                value: null,            //field data value\n                type: [\'varchar\', 100], //field data type\n                default: \'\'             //field default value\n            },\n            pwd: {\n                value: null,\n                type: [\'varchar\', 100],\n                default: \'\'\n            },\n            email: {\n                value: null,\n                type: [\'varchar\', 50],\n                default: \'\'\n            },\n            phone: {\n                value: null,\n                type: [\'varchar\', 20],\n                default: \'\'\n            },\n            address: {\n                value: null,\n                type: [\'varchar\', 250],\n                default: \'\'\n            },\n            avatarImg: {\n                value: null,\n                type: [\'varchar\', 100],\n                default: \'\'\n            },\n            lastLoginTime: {\n                value: null,\n                type: [\'datetime\'],\n                format: "date_format({},\'%Y-%c-%d %h:%i:%s\')",\n                default: null\n            }\n        }\n    });\n})\n```\n\n```js\n//define user controller\nzn.define(function () {\n    //define controller name\n    return zn.Controller(\'user\',{\n        methods: {\n            init: function (args){\n                //init\n                this._action = this.action(\'zn_rights_user\');\n            },\n            //define login action\n            login: {\n                method: \'GET/POST\',     //action method\n                argv: {                 //action argv\n                    username: null,\n                    password: null\n                },\n                value: function (request, response, chain){\n                    this._action.selectOne(request.getValue()).then(function (user){\n                        if(user){\n                            request.session.user = user;\n                            response.success(user);\n                        } else {\n                            response.error(\'Username or password is incorrect.\');\n                        }\n                    }, function (error){\n                        response.error(error.message);\n                    });\n                }\n            }\n        }\n    });\n});\n```\n\n```js\n//define user Action\nzn.define(function () {\n\n    return zn.Action({\n        methods: {\n            getLoginInfo: function (userId){\n\n            }\n        }\n    });\n\n});\n```\n\n## Features\n\n* Fully OOP.\n\n## Installation\n\n```sh\nnpm install zeanium-node -g\n```\n\n## Create Workspace\n\n```sh\nzn create workspace workspace_demo\n```\n\n## Create Application\n\n```sh\nzn create app app_demo\n```\n\n## Install dependencies\n\n```sh\nnpm install\n```\n\n## Start Application\n\n```sh\nnpm start or zn\n```\n\nIf you start server you will see the detail on console:\n\n```text\n2016-08-17 21:12:44.043 [INFO] [ Begin ] Scanning Path:../www/\n2016-08-17 21:12:44.051 [INFO] Loading Application: ../www/__zn__\n2016-08-17 21:12:44.059 [INFO] Register Project(Application): __zn__\n2016-08-17 21:12:44.060 [INFO] [ End ] Scanning Path(Application:1):../www/\n2016-08-17 21:12:44.060 [INFO] [ Begin ] Scanning Path:../bin/\n2016-08-17 21:12:44.063 [INFO] [ End ] Scanning Path(Application:0):../bin/\n2016-08-17 21:12:44.066 [INFO] http://0.0.0.0:8080\n2016-08-17 21:12:44.068 [INFO] http://127.0.0.1:8080\n2016-08-17 21:12:44.069 [INFO] You can press [ control + c ] to stop current zeanium server.\n```\n\n## Documentation\n\n[http://www.zeanium.com](http://www.zeanium.com)\n\n## License\n\n[MIT](https://github.com/yangyxu/Zeanium-Node/blob/master/LICENSE)\n',
+21 silly publish   readmeFilename: 'README.md',
+21 silly publish   gitHead: 'a4c9d339b0d322708c5b716ae6a6ebeac963217d',
+21 silly publish   _id: 'zeanium@1.1.0',
+21 silly publish   _shasum: 'da0e2399516e101794b35a8f4b10bfbac9872380',
+21 silly publish   _from: '.' }
+22 verbose getPublishConfig undefined
+23 silly mapToRegistry name zeanium
+24 silly mapToRegistry using default registry
+25 silly mapToRegistry registry https://registry.npmjs.org/
+26 silly mapToRegistry data Result {
+26 silly mapToRegistry   raw: 'zeanium',
+26 silly mapToRegistry   scope: null,
+26 silly mapToRegistry   name: 'zeanium',
+26 silly mapToRegistry   rawSpec: '',
+26 silly mapToRegistry   spec: 'latest',
+26 silly mapToRegistry   type: 'tag' }
+27 silly mapToRegistry uri https://registry.npmjs.org/zeanium
+28 verbose publish registryBase https://registry.npmjs.org/
+29 silly publish uploading /Users/yangyxu/.npm/zeanium/1.1.0/package.tgz
+30 verbose request uri https://registry.npmjs.org/zeanium
+31 verbose request sending authorization for write operation
+32 info attempt registry request try #1 at 3:19:55 PM
+33 verbose request using bearer token for auth
+34 verbose request id a99bde10f71025b0
+35 http request PUT https://registry.npmjs.org/zeanium
+36 http 403 https://registry.npmjs.org/zeanium
+37 verbose headers { 'content-type': 'application/json',
+37 verbose headers   'cache-control': 'max-age=300',
+37 verbose headers   'content-length': '95',
+37 verbose headers   'accept-ranges': 'bytes',
+37 verbose headers   date: 'Wed, 01 Mar 2017 07:19:57 GMT',
+37 verbose headers   via: '1.1 varnish',
+37 verbose headers   connection: 'keep-alive',
+37 verbose headers   'x-served-by': 'cache-itm7427-ITM',
+37 verbose headers   'x-cache': 'MISS',
+37 verbose headers   'x-cache-hits': '0',
+37 verbose headers   'x-timer': 'S1488352795.926821,VS0,VE1088',
+37 verbose headers   vary: 'Accept-Encoding' }
+38 verbose request invalidating /Users/yangyxu/.npm/registry.npmjs.org/zeanium on PUT
+39 error publish Failed PUT 403
+40 verbose stack Error: "You cannot publish over the previously published version 1.1.0." : zeanium
+40 verbose stack     at makeError (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:264:12)
+40 verbose stack     at CachingRegistryClient.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:252:14)
+40 verbose stack     at Request._callback (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:172:14)
+40 verbose stack     at Request.self.callback (/usr/local/lib/node_modules/npm/node_modules/request/request.js:199:22)
+40 verbose stack     at emitTwo (events.js:100:13)
+40 verbose stack     at Request.emit (events.js:185:7)
+40 verbose stack     at Request.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/request/request.js:1036:10)
+40 verbose stack     at emitOne (events.js:95:20)
+40 verbose stack     at Request.emit (events.js:182:7)
+40 verbose stack     at IncomingMessage.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/request/request.js:963:12)
+41 verbose statusCode 403
+42 verbose pkgid zeanium
+43 verbose cwd /Code/Git/YY/ZN/zeanium
+44 error Darwin 15.6.0
+45 error argv "/usr/local/bin/node" "/usr/local/bin/npm" "publish"
+46 error node v5.10.1
+47 error npm  v3.8.3
+48 error code E403
+49 error "You cannot publish over the previously published version 1.1.0." : zeanium
+50 error If you need help, you may report this error at:
+50 error     <https://github.com/npm/npm/issues>
+51 verbose exit [ 1, true ]
