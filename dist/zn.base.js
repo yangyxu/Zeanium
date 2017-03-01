@@ -1498,12 +1498,12 @@ if (__isServer) {
             if(_superCtor && _superCtor.meta.auto){
                 _superCtor.meta.value.apply(__context__, __arguments__);
             }
-
-            return arguments.callee(__super__._super_, __context__);
+            //TODO: This will not working in es5.
+            //return arguments.callee(__super__._super_, __context__);
         }
     };
 
-    /**
+    /**s
      * Define a class
      * @method define
      * @param [name] {String}
@@ -2382,10 +2382,12 @@ if (__isServer) {
     var HttpRequest = zn.Class({
         events: [
             'init',
+            'validate',
             'before',
             'success',
             'error',
-            'complete'
+            'complete',
+            'after'
         ],
         properties: {
             url: null,
@@ -2410,12 +2412,20 @@ if (__isServer) {
                     _method = method || this._method || 'POST',
                     _headers = headers || this._headers || {};
 
-                return {
+                var _args = {
                     url: _url,
                     data: _data,
                     method: _method,
                     headers: _headers
                 };
+                return _args;
+                /*
+                var _result = this.fire('validate', _args);
+                if(_result !== null && _result !== undefined){
+                    return _result;
+                }else {
+                    return _args;
+                }*/
             },
             exec: function (url, data, method, headers){
                 var _argv = this.validateArgv(url, data, method, headers);
@@ -2430,12 +2440,32 @@ if (__isServer) {
 
                 return _argv;
             },
-            onComplete: function (xhr){
-                var _result = Store.fire('after', xhr);
+            __onComplete: function (data){
+                var _result = Store.fire('after', data);
                 if(_result===false){
                     return false;
                 }
-                _result = this.fire('complete', xhr);
+                _result = this.fire('complete', data);
+                if(_result===false){
+                    return false;
+                }
+            },
+            __onSuccess: function (data, xhr){
+                var _result = Store.fire('success', data, xhr);
+                if(_result===false){
+                    return false;
+                }
+                _result = this.fire('success', data, xhr);
+                if(_result===false){
+                    return false;
+                }
+            },
+            __onError: function (xhr){
+                var _result = Store.fire('success', xhr);
+                if(_result===false){
+                    return false;
+                }
+                _result = this.fire('success', xhr);
                 if(_result===false){
                     return false;
                 }
@@ -2465,10 +2495,29 @@ if (__isServer) {
     var XHR = zn.Class(HttpRequest, {
         methods: {
             init: function (url, data, method, headers){
-                this.super(url, data, method, headers);
+                this.sets({
+                    url: url,
+                    data: data,
+                    method: method,
+                    headers: headers
+                });
+
+                this.fire('init', this.gets());
+                //this.super(url, data, method, headers);
             },
             exec: function (url, data, method, headers){
-                var _argv = this.super(url, data, method, headers);
+                //var _argv = this.super(url, data, method, headers);
+
+                var _argv = this.validateArgv(url, data, method, headers);
+                var _result = Store.fire('before', _argv);
+                if(_result===false){
+                    return false;
+                }
+                _result = this.fire('before', _argv);
+                if(_result===false){
+                    return false;
+                }
+
                 if(_argv===false){
                     return false;
                 }
@@ -2478,13 +2527,13 @@ if (__isServer) {
                     data: _argv.data,
                     headers: _argv.headers,
                     success: function (sender, data, xhr){
-                        this.fire('success', data, xhr);
+                        this.__onSuccess(data, xhr);
                     }.bind(this),
                     error: function (sender, xhr){
-                        this.fire('error', xhr);
+                        this.__onError(xhr);
                     }.bind(this),
                     complete: function (sender, xhr){
-                        this.onComplete(xhr);
+                        this.__onComplete(xhr);
                     }.bind(this)
                 });
             }
@@ -2494,10 +2543,31 @@ if (__isServer) {
     var Fetcher = zn.Class(HttpRequest, {
         methods: {
             init: function (url, data, method, headers){
-                this.super(url, data, method, headers);
+                this.sets({
+                    url: url,
+                    data: data,
+                    method: method,
+                    headers: headers
+                });
+
+                this.fire('init', this.gets());
+                //this.super(url, data, method, headers);
             },
             exec: function (url, data, method, headers){
-                var _argv = this.super(url, data, method, headers);
+                //var _argv = this.super(url, data, method, headers);
+
+                var _argv = this.validateArgv(url, data, method, headers);
+                var _result = Store.fire('before', _argv);
+                if(_result===false){
+                    return false;
+                }
+                _result = this.fire('before', _argv);
+                if(_result===false){
+                    return false;
+                }
+
+                //return _argv;
+
                 if(_argv===false){
                     return false;
                 }
@@ -2505,7 +2575,10 @@ if (__isServer) {
                     _method = _argv.method,
                     _data = _argv.data,
                     _headers = _argv.headers,
-                    _self = this;
+                    _self = this,
+                    _clone = {
+                        method: _method.toUpperCase()
+                    };
 
                 switch (_method.toUpperCase()) {
                     case "POST":
@@ -2513,19 +2586,23 @@ if (__isServer) {
                         for(var key in _data){
                             _temp.append(key, _data[key]);
                         }
-                        _data = _temp;
-                        _headers = zn.overwrite(_headers, {
+                        _clone.body = _temp;
+                        _clone.headers = zn.overwrite(_headers, {
                             'Accept': 'multipart/form-data',
                             'Content-Type': 'multipart/form-data; charset=UTF-8'
                         });
                         break;
                     case "GET":
-
+                        var _params = [];
+                        zn.each(_data, function (value, key){
+                            _params.push(key+'='+value);
+                        });
+                        _url += '?'+_params.join('&');
                         break;
                     case "JSON":
-                        _data = JSON.stringify(_data);
-                        _method = 'POST';
-                        _headers = zn.overwrite(_headers, {
+                        _clone.body = JSON.stringify(_data);
+                        _clone.method = 'POST';
+                        _clone.headers = zn.overwrite(_headers, {
                             'Accept': 'multipart/form-data',
                             'Content-Type': 'multipart/form-data; charset=UTF-8'
                         });
@@ -2533,22 +2610,15 @@ if (__isServer) {
                 }
 
                 return new Promise(function (resolve, reject) {
-                    fetch(Store.fixURL(_url), {
-                        method: _method.toUpperCase(),
-                        body: _data,
-                        headers: _headers
-                    })
-                    .then(function (response) {
+                    fetch(Store.fixURL(_url), _clone).then(function (response) {
                         return response.json();
-                    })
-                    .then(function (responseData) {
-                        _self.fire('success', responseData);
-                        _self.onComplete(responseData);
+                    }).then(function (responseData) {
+                        _self.__onSuccess(responseData);
+                        _self.__onComplete(responseData);
                         resolve(responseData);
-                    })
-                    .catch(function (error) {
-                        _self.fire('error', error);
-                        _self.onComplete(error);
+                    }).catch(function (error) {
+                        _self.__onError(error);
+                        _self.__onComplete(error);
                         reject(error);
                     });
                 });
@@ -2579,6 +2649,9 @@ if (__isServer) {
                     data: data,
                     argv: argv
                 });
+                if(argv&&argv.autoLoad){
+                    this.exec();
+                }
             },
             refresh: function (){
                 this.exec();
@@ -2598,9 +2671,6 @@ if (__isServer) {
                 if(_temp===false){
                     return false;
                 }
-                if(_temp!==undefined){
-                    _data = _temp;
-                }
 
             	if(_data.__id__){
                     _data.on('success', function (sender, data){
@@ -2609,7 +2679,7 @@ if (__isServer) {
                         }
                     }).on('error', function (sender, data){
                         if(_self._argv.onError){
-                            _self._argv.onSuccess(data);
+                            _self._argv.onError(data);
                         }
                     }).on('complete', function (sender, data){
                         if(_self._argv.onComplete){
@@ -2625,6 +2695,9 @@ if (__isServer) {
                             if(_self._argv.onSuccess){
                                 _self._argv.onSuccess(_data);
                             }
+                            if(_self._argv.onComplete){
+                                _self._argv.onComplete(_data);
+                            }
                             resolve(_data);
                         }else {
                             if(Store.fire('error', _data) === false){
@@ -2632,6 +2705,9 @@ if (__isServer) {
                             }
                             if(_self._argv.onError){
                                 _self._argv.onError(_data);
+                            }
+                            if(_self._argv.onComplete){
+                                _self._argv.onComplete(_data);
                             }
                             reject(_data);
                         }
@@ -2642,7 +2718,7 @@ if (__isServer) {
     });
 
     var StoreClass = zn.Class({
-        events: ['before', 'after'],
+        events: ['before', 'success', 'error', 'complete', 'after'],
         properties: {
             host: 'http://0.0.0.0:8080/',
             engine: {

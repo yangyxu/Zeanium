@@ -856,12 +856,12 @@
             if(_superCtor && _superCtor.meta.auto){
                 _superCtor.meta.value.apply(__context__, __arguments__);
             }
-
-            return arguments.callee(__super__._super_, __context__);
+            //TODO: This will not working in es5.
+            //return arguments.callee(__super__._super_, __context__);
         }
     };
 
-    /**
+    /**s
      * Define a class
      * @method define
      * @param [name] {String}

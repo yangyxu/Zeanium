@@ -108,7 +108,13 @@
                 require.cache[path] = null;
                 var _module = Module.all[path];
                 if(_module&&_module.parent){
-                    Module.unloadModule(_module.parent.path);
+                    try {
+                        Module.unloadModule(_module.parent.path);
+                    } catch (e) {
+                        zn.error(e.message);
+                    } finally {
+
+                    }
                 }
 
                 Module.all[path] = null;
@@ -124,7 +130,13 @@
 
                 var _path = __path.formatPath(path, parent);
                 if(!_doc) {
-                    _path = require.resolve(_path);
+                    try {
+                        _path = require.resolve(_path);
+                    } catch (e) {
+                        zn.error(e.message);
+                    } finally {
+
+                    }
                 }
 
                 var _module = Module.all[_path];
@@ -171,8 +183,15 @@
             },
             __nodeModule: function (path, callback){
                 var _path = path,
-                    _callback = callback || zn.idle;
-                _callback(require(_path));
+                    _callback = callback || zn.idle,
+                    _value = null;
+                try {
+                    _value = require(_path);
+                } catch (e) {
+                    zn.error(e.message);
+                } finally {
+                    _callback(_value);
+                }
             },
             __webModule: function (path, callback){
                 var _head = _doc.head || _doc.getElementsByTagName('head')[0],

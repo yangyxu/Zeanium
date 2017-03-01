@@ -1,11 +1,11 @@
 # Zeanium
 
-[简体中文文档](https://github.com/yangyxu/Zeanium/blob/master/README_zh-CN.md)
+[简体中文文档](https://github.com/yangyxu/Zeanium-Node/blob/master/README_zh-CN.md)
 
 
 ## Introduction
 
-Zeanium-Node is based on Zeanium-Core(https://github.com/yangyxu/Zeanium), it is back-end solution for node.js. Provide `cache`、`database`、`io`、`net`、`parser`、`session`、`template` features.
+Zeanium is .
 
 It's back-end mvc framework, provide integrated solutions.
 
