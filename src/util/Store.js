@@ -266,16 +266,20 @@
                 this.fire('init', this);
             },
             reset: function (data, argv){
-                this.sets({
-                    data: data,
-                    argv: argv
-                });
-                if(argv&&argv.autoLoad){
+                if(data){
+                    this._data = data;
+                }
+                if(argv){
+                    this._argv = argv;
+                }
+                if(this._argv&&this._argv.autoLoad){
                     this.exec();
                 }
+
+                return this;
             },
             refresh: function (){
-                this.exec();
+                return this.exec(), this;
             },
             exec: function (){
                 var _data = this._data,

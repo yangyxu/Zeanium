@@ -96,27 +96,21 @@
      **/
     var Logger = zn.Class({
         static: true,
-        properties: {
-
-        },
         methods: {
-            init: function (args){
-
+            info: function () {
+                this.__log.call(this, LEVELS.INFO, arguments);
             },
-            info: function (obj) {
-                this.__log(LEVELS.INFO, obj);
+            debug: function () {
+                this.__log.call(this, LEVELS.DEBUG, arguments);
             },
-            debug: function (obj) {
-                this.__log(LEVELS.DEBUG, obj);
+            warn: function () {
+                this.__log.call(this, LEVELS.WARNING, arguments);
             },
-            warn: function (obj) {
-                this.__log(LEVELS.WARNING, obj);
-            },
-            trace: function (obj) {
-                this.__log(LEVELS.TRACE, obj);
+            trace: function () {
+                this.__log.call(this, LEVELS.TRACE, arguments);
             },
             error: function (obj) {
-                this.__log(LEVELS.ERROR, obj);
+                this.__log.call(this, LEVELS.ERROR, arguments);
             },
             __getDateString: function (date) {
                 return DateUtil.asString(date||new Date());
@@ -146,8 +140,7 @@
                     color,
                     TYPES[log.type],
                     _foot,
-                    '] ',
-                    log.message
+                    '] '
                 ].join('');
 
                 /*
@@ -175,22 +168,28 @@
                     TYPES[log.type],
                     //'] [', //'] [',
                     //log.pos,
-                    '] ',
-                    log.message
+                    '] '
                 ].join('');
             },
-            __log: function (type, message) {
-                var _log = {
-                    type: type,
-                    message: typeof message=='object'?JSON.stringify(message): message,
-                    time: this.__getDateString(),
-                    pos: this.__getPosition()
-                };
+            __log: function (type, argv) {
+                var _argv = Array.prototype.slice.call(argv);
                 if (typeof module !== 'undefined' && module.exports){
-                    console.log(this.__formatLog4Server(_log, true));
+                    _argv.unshift(this.__formatLog4Server({
+                        type: type,
+                        time: this.__getDateString(),
+                        pos: this.__getPosition()
+                    }, true));
                 }else {
-                    console.log(this.__formatLog4Client(_log, true), 'color:'+COLORS_VALUE[type]);
+                    _argv.unshift(this.__formatLog4Client({
+                        type: type,
+                        time: this.__getDateString(),
+                        pos: this.__getPosition()
+                    }, true));
+
+                    _argv.unshift('color:'+COLORS_VALUE[type]);
                 }
+
+                console.log.apply(this, _argv);
             }
         }
     });
