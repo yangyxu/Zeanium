@@ -3,7 +3,7 @@
  */
 module("class");
 
-var Person = zn.class('test.Person', {
+var Person = zn.Class('test.Person', {
     events: ['say', 'eat', 'walk'],
     statics: {
         count: 0,
@@ -16,10 +16,16 @@ var Person = zn.class('test.Person', {
             set: function (value){
                 console.log('set name: '+value);
                 this._name = value;
+            }
+        },
+        age: {
+            readonly: false,
+            value: 12,
+            get: function(){
+
             },
-            get: function (value){
-                console.log('get name:' + this._name);
-                return this._name;
+            set: function (){
+
             }
         }
     },
@@ -30,6 +36,13 @@ var Person = zn.class('test.Person', {
         init: function (values) {
             //console.log(values);
             this.sets(values);
+
+
+            this.get('name');
+            console.log(this.name);
+
+            this.set('name', 'xxx');
+            this.name = 'xxx';
         },
         say: function () {
             this.fire('say', 'say hello');
@@ -38,6 +51,7 @@ var Person = zn.class('test.Person', {
             this.fire('eat', 'eat food');
         },
         walk: function () {
+            this.eat();
             this.fire('walk', 'walk to home.');
         }
     }
@@ -45,7 +59,14 @@ var Person = zn.class('test.Person', {
 
 var p1 = new Person();
 
+p1.on('say', function (){
+
+});
+
 p1.name = 'aa';
+p1.set('name', 'aa');
+p1.walk();
+
 
 console.log(p1.name);
 
@@ -87,7 +108,7 @@ var Factory = zn.class('test.Factory', {
             console.log('Factory define');
         },
         init: function (self) {
-
+            this.create();
         },
         create: function () {
             console.log('create');

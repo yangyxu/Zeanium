@@ -120,7 +120,7 @@
                     throw new Error();
                 } catch(e) {
                     //console.log(e.stack);
-                    var _pos = e.stack.split('\n')[4].replace(/\(/g, '').replace(/\)/g, '').split('/').pop();
+                    var _pos = e.stack.split('\n')[5].replace(/\(/g, '').replace(/\)/g, '').split('/').pop();
                     return _pos;
                 }
             },
@@ -133,6 +133,7 @@
                     color = COLORS[log.type]+'m';
                 }
 
+                /*
                 return [
                     log.time,
                     ' [',
@@ -141,9 +142,9 @@
                     TYPES[log.type],
                     _foot,
                     '] '
-                ].join('');
+                ].join('');*/
 
-                /*
+
                 return [
                     log.time,
                     ' [',
@@ -159,7 +160,6 @@
                     '] ',
                     log.message
                 ].join('');
-                */
             },
             __formatLog4Client: function (log, color) {
                 return [

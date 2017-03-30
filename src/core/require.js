@@ -99,25 +99,25 @@
             counter: 0,
             preLoadedPackage: {},
             unloadModule: function (path){
-                var _path = require.resolve(path);
-                var module = require.cache[path];
-                // remove reference in module.parent
-                if (module && module.parent) {
-                    module.parent.children.splice(module.parent.children.indexOf(module), 1);
-                }
-                require.cache[path] = null;
-                var _module = Module.all[path];
-                if(_module&&_module.parent){
-                    try {
-                        Module.unloadModule(_module.parent.path);
-                    } catch (e) {
-                        zn.error(e.message);
-                    } finally {
+                try {
+                    path = require.resolve(path);
 
+                    var module = require.cache[path];
+                    // remove reference in module.parent
+                    if (module && module.parent) {
+                        module.parent.children.splice(module.parent.children.indexOf(module), 1);
                     }
+                    require.cache[path] = null;
+                    var _module = Module.all[path];
+
+                    Module.all[path] = null;
+                    if(_module&&_module.parent){
+                        Module.unloadModule(_module.parent.path);
+                    }
+                } catch (e) {
+                    zn.error(e.message);
                 }
 
-                Module.all[path] = null;
                 return this;
             },
             loadModule: function (path, callback, parent){
@@ -133,9 +133,8 @@
                     try {
                         _path = require.resolve(_path);
                     } catch (e) {
-                        zn.error(e.message);
-                    } finally {
-
+                        zn.error('node require.resolve() error: ', e.message);
+                        return callback({});
                     }
                 }
 
@@ -184,11 +183,11 @@
             __nodeModule: function (path, callback){
                 var _path = path,
                     _callback = callback || zn.idle,
-                    _value = null;
+                    _value = {};
                 try {
                     _value = require(_path);
                 } catch (e) {
-                    zn.error(e.message);
+                    zn.error('node require() error: ', e.message);
                 } finally {
                     _callback(_value);
                 }
