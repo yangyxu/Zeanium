@@ -189,7 +189,7 @@
                     _data = null;
                 }
                 if(_XHR.readyState<2){
-                    _XHR.withCredentials = true;
+                    //_XHR.withCredentials = true;
                 }
 
                 _XHR.open(_method, _url, this.asyns);

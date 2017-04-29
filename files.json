@@ -8,6 +8,7 @@
         "src/util/Queue.js",
         "src/util/Async.js",
         "src/util/Http.js",
+        "src/util/QueryString.js",
         "src/util/Store.js"
     ],
     "core": [
@@ -21,6 +22,7 @@
         "src/util/Logger.js",
         "src/util/Async.js",
         "src/util/Http.js",
+        "src/util/QueryString.js",
         "src/util/Store.js"
     ],
     "data": [

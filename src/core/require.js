@@ -190,7 +190,8 @@
                 try {
                     _value = require(_path);
                 } catch (e) {
-                    zn.error('node require() error: ', e.message);
+                    console.error(e);
+                    zn.error('Node.js require('+_path+') error: ', e.message);
                 } finally {
                     _callback(_value);
                 }

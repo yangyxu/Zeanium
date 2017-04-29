@@ -21,11 +21,14 @@
             if(_argv.length<2){
                 return _argv[0];
             }else {
-                _value = _argv[0].toString();
+                _value = _argv[0];
+                _value = _value.toString?_value.toString():_value;
                 _values = _argv[1];
                 __builtinZNObject__.each(_values, function (value, index){
-                    value = (__builtinZNObject__.is(value, 'object')?JSON.stringify(value):value.toString());
-                    _value = _value.replace(new RegExp('\\{'+index+'\\}', 'gi'), value);
+                    if(value!==null&&value!==undefined){
+                        value = (__builtinZNObject__.is(value, 'object')?JSON.stringify(value):(value.toString?value.toString():value));
+                        _value = _value.replace(new RegExp('\\{'+index+'\\}', 'gi'), value);
+                    }
                 });
             }
 
