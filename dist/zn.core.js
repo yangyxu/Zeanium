@@ -1490,7 +1490,8 @@ if (__isServer) {
                     if(mixin['@init']){
                         _mixinCtor = mixin['@init'].meta;
                         _mixinCtor = zn.is(_mixinCtor, 'function') ? _mixinCtor : _mixinCtor.value;
-                        //__execSuperCtor(mixin.prototype.__super__, mixin.prototype, __arguments__);
+                        //TODO: This will not working in es6.
+                        __execSuperCtor(mixin.prototype.__super__, mixin.prototype, __arguments__);
                         if (_mixinCtor) {
                             _mixinCtor.call(__context__);
                         }
@@ -1501,8 +1502,8 @@ if (__isServer) {
             if(_superCtor && _superCtor.meta.auto){
                 _superCtor.meta.value.apply(__context__, __arguments__);
             }
-            //TODO: This will not working in es5.
-            //return arguments.callee(__super__._super_, __context__);
+            //TODO: This will not working in es6.
+            return arguments.callee(__super__._super_, __context__);
         }
     };
 
