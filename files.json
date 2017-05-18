@@ -1,16 +1,4 @@
 {
-    "base": [
-        "src/core/zn.js",
-        "src/core/builtin.js",
-        "src/core/fix.js",
-        "src/core/class.js",
-        "src/util/Date.js",
-        "src/util/Queue.js",
-        "src/util/Async.js",
-        "src/util/Http.js",
-        "src/util/QueryString.js",
-        "src/util/Store.js"
-    ],
     "core": [
         "src/core/zn.js",
         "src/core/builtin.js",
@@ -21,9 +9,7 @@
         "src/util/Queue.js",
         "src/util/Logger.js",
         "src/util/Async.js",
-        "src/util/Http.js",
-        "src/util/QueryString.js",
-        "src/util/Store.js"
+        "src/util/QueryString.js"
     ],
     "data": [
         "src/data/List.js",
@@ -35,5 +21,12 @@
         "src/data/Map.js",
         "src/data/ObservableList.js",
         "src/data/ObservableMap.js"
+    ],
+    "web": [
+        "src/web/Http.js",
+        "src/web/Store.js",
+        "src/web/Cookie.js",
+        "src/web/Date.js",
+        "src/web/DOM.js"
     ]
 }

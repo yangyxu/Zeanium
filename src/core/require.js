@@ -136,7 +136,7 @@
                     try {
                         _path = require.resolve(_path);
                     } catch (e) {
-                        zn.error('node require.resolve() error: ', e.message);
+                        zn.error('node require.resolve(' + _path + '): ', e.message);
                         return callback({});
                     }
                 }

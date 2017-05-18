@@ -8,24 +8,20 @@ module.exports = function (grunt) {
             }
         },
         jshint: {
-            base: {
-                src: '<%= pkg.base %>'
-            },
             core: {
                 src: '<%= pkg.core %>'
             },
             data: {
                 src: '<%= pkg.data %>'
             },
+            web: {
+                src: '<%= pkg.web %>'
+            },
             options: {
                 eqnull: true
             }
         },
         concat: {
-            base: {
-                src: '<%= pkg.base %>',
-                dest: 'dist/zn.base.js'
-            },
             core: {
                 src: '<%= pkg.core %>',
                 dest: 'dist/zn.core.js'
@@ -33,18 +29,13 @@ module.exports = function (grunt) {
             data: {
                 src: '<%= pkg.data %>',
                 dest: 'dist/zn.data.js'
+            },
+            web: {
+                src: '<%= pkg.web %>',
+                dest: 'dist/zn.web.js'
             }
         },
         uglify: {
-            base: {
-                src: ['dist/zn.base.js'],
-                dest: 'dist/zn.base.minx.js',
-                options: {
-                    beautify: {
-                        ascii_only: true
-                    }
-                }
-            },
             core: {
                 src: ['dist/zn.core.js'],
                 dest: 'dist/zn.core.minx.js',
@@ -63,8 +54,26 @@ module.exports = function (grunt) {
                     }
                 }
             },
+            web: {
+                src: ['dist/zn.web.js'],
+                dest: 'dist/zn.web.minx.js',
+                options: {
+                    beautify: {
+                        ascii_only: true
+                    }
+                }
+            },
+            znweb: {
+                src: ['dist/zn.core.js', 'dist/zn.web.js'],
+                dest: 'dist/znweb.minx.js',
+                options: {
+                    beautify: {
+                        ascii_only: true
+                    }
+                }
+            },
             zn: {
-                src: ['dist/zn.core.js', 'dist/zn.data.js'],
+                src: ['dist/zn.core.js', 'dist/zn.data.js', 'dist/zn.web.js'],
                 dest: 'dist/zn.minx.js',
                 options: {
                     beautify: {

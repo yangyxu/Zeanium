@@ -14,9 +14,13 @@
                 _argv = _argv[0];
             }
             zn.each(_argv, function (value, index){
-                value = (zn.type(value)=='object'?JSON.stringify(value):value.toString());
-                _self = _self.replace(new RegExp('\\{'+index+'\\}', 'gi'), value);
+                if(value!==null&&value!==undefined){
+                    value = (zn.type(value)=='object'?JSON.stringify(value):(value.toString?value.toString():value));
+                    _self = _self.replace(new RegExp('\\{'+index+'\\}', 'gi'), value);
+                }
             });
+
+            //return zn.format.call(this, this, arguments);
 
             return _self.toString();
         }
