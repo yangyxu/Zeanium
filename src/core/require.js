@@ -131,13 +131,26 @@
                     return callback(require(path.substring(5)));
                 }
 
-                var _path = __path.formatPath(path, parent);
-                if(!_doc) {
-                    try {
-                        _path = require.resolve(_path);
-                    } catch (e) {
-                        zn.error('node require.resolve(' + _path + '): ', e.message);
-                        return callback({});
+                var _path = null;
+                if(zn.NODE_PATHS && zn.NODE_PATHS.length){
+                    zn.NODE_PATHS.every(function (nodepath, index){
+                        if(path.indexOf(nodepath) === 0){
+                            return _path = path, false;
+                        }else {
+                            return true;
+                        }
+                    });
+                }
+
+                if(!_path){
+                    _path = __path.formatPath(path, parent);
+                    if(!_doc) {
+                        try {
+                            _path = require.resolve(_path);
+                        } catch (e) {
+                            zn.error('node require.resolve(' + _path + '): ', e.message);
+                            return callback({});
+                        }
                     }
                 }
 
