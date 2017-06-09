@@ -64,9 +64,11 @@
                 try {
                     throw new Error();
                 } catch(e) {
-                    //console.log(e.stack);
-                    var _pos = e.stack.split('\n')[5].replace(/\(/g, '').replace(/\)/g, '').split('/').pop();
-                    return _pos;
+                    if(zn.DEBUG && zn.CONSOLE_ERROR){
+                        console.log(e);
+                    }
+
+                    return e.stack.split('\n')[5].replace(/\(/g, '').replace(/\)/g, '').split('/').pop();
                 }
             },
             __formatLog4Server: function (log, color) {
@@ -77,18 +79,6 @@
                     _tag = COLORS[5]+'m';
                     color = COLORS[log.type]+'m';
                 }
-
-                /*
-                return [
-                    log.time,
-                    ' [',
-                    _head,
-                    color,
-                    TYPES[log.type],
-                    _foot,
-                    '] '
-                ].join('');*/
-
 
                 return [
                     log.time,
@@ -133,17 +123,17 @@
                         pos: _pos
                     }, true));
                 }else {
+                    _argv.unshift('color:' + COLORS_VALUE[type]);
                     _argv.unshift(this.__formatLog4Client({
                         type: type,
                         time: _time,
                         pos: _pos
                     }, true));
-                    _argv.unshift('color:' + COLORS_VALUE[type]);
                 }
 
                 if(this.__isOk(_type)){
                     var _result = this.fire(_type, _data);
-                    if(_result !== false){
+                    if(_result !== false && zn.DEBUG){
                         console.log.apply(this, _argv);
                     }
                 }

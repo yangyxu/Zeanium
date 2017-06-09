@@ -20,77 +20,6 @@
         REJECTED: 2
     };
 
-    var Async = zn.Class({
-        static: true,
-        methods: {
-            init: function (inArgs) {
-                this._exceptions = [];
-                this._finallys = [];
-                this._count = 0;
-                this._currIndex = 0;
-                this._dataArray = [];
-            },
-            exception: function (onException){
-                return this._exceptions.push(onException), this;
-            },
-            catch: function (ex, context){
-                zn.each(this._exceptions, function (exception){
-                    exception.call(context, ex);
-                });
-
-                return this;
-            },
-            finally: function (onFinally){
-                return this._finallys.push(onFinally), this;
-            },
-            defer: function (resolve, reject) {
-                var _self = this,
-                    _defer = new Defer(resolve, reject);
-                _defer.on('complete', function (sender, data){
-                    _self._currIndex++;
-                    _self._dataArray.push(data);
-                    if(_self._currIndex==_self._count){
-                        zn.each(_self._finallys, function (_finally){
-                            try {
-                                _finally(_self._dataArray);
-                            } catch(e) {
-                                zn.error(e.message);
-                            }
-                        });
-                        _self._finallys = [];
-                    }
-                });
-                _self._count++;
-
-                return _defer;
-            },
-            all: function (promises) {
-                var _deferred = Async.defer();
-                var _n = 0, _result = [];
-                zn.each(promises, function (promise){
-                    promise.then(function (ret){
-                        _result.push(ret);
-                        _n++;
-                        if(_n>=promises.length){
-                            _deferred.resolve(_result);
-                        }
-                    });
-                });
-                return _deferred.promise;
-            },
-            any: function (promises) {
-                var _deferred = Async.defer();
-                zn.each(promises, function (promise){
-                    promise.then(function (ret){
-                        _deferred.resolve(ret);
-                    });
-                });
-                return _deferred.promise;
-            }
-        }
-    });
-
-
     var Defer = zn.Class({
         events: ['complete'],
         properties: {
@@ -214,6 +143,74 @@
         }
     });
 
-    zn.async = Async;
+    var Async = zn.async = zn.Class({
+        static: true,
+        methods: {
+            init: function (inArgs) {
+                this._exceptions = [];
+                this._finallys = [];
+                this._count = 0;
+                this._currIndex = 0;
+                this._dataArray = [];
+            },
+            exception: function (onException){
+                return this._exceptions.push(onException), this;
+            },
+            catch: function (ex, context){
+                zn.each(this._exceptions, function (exception){
+                    exception.call(context, ex);
+                });
+
+                return this;
+            },
+            finally: function (onFinally){
+                return this._finallys.push(onFinally), this;
+            },
+            defer: function (resolve, reject) {
+                var _self = this,
+                    _defer = new Defer(resolve, reject);
+                _defer.on('complete', function (sender, data){
+                    _self._currIndex++;
+                    _self._dataArray.push(data);
+                    if(_self._currIndex==_self._count){
+                        zn.each(_self._finallys, function (_finally){
+                            try {
+                                _finally(_self._dataArray);
+                            } catch(e) {
+                                zn.error(e.message);
+                            }
+                        });
+                        _self._finallys = [];
+                    }
+                });
+                _self._count++;
+
+                return _defer;
+            },
+            all: function (promises) {
+                var _deferred = Async.defer();
+                var _n = 0, _result = [];
+                zn.each(promises, function (promise){
+                    promise.then(function (ret){
+                        _result.push(ret);
+                        _n++;
+                        if(_n>=promises.length){
+                            _deferred.resolve(_result);
+                        }
+                    });
+                });
+                return _deferred.promise;
+            },
+            any: function (promises) {
+                var _deferred = Async.defer();
+                zn.each(promises, function (promise){
+                    promise.then(function (ret){
+                        _deferred.resolve(ret);
+                    });
+                });
+                return _deferred.promise;
+            }
+        }
+    });
 
 })(zn);

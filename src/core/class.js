@@ -179,6 +179,12 @@
             };
 
             if (name in target) {
+                if(!meta.value){
+                    meta.value = function (){
+
+                    };
+                }
+
                 meta.value.__super__ = target[name];
             }
 
@@ -346,6 +352,9 @@
     var classMethods = {
         toString: function (){
             return '{ ClassName: ' + (this._name_ || 'Anonymous') + ', ClassID: ' + this._id_ + ' }';
+        },
+        createSelf: function (){
+            return new this.constructor.apply(this, Array.prototype.slice.call(arguments));
         },
         getProperties: function(callback){
             var _props = {};

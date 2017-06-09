@@ -143,7 +143,7 @@
                     return false;
                 }
 
-                return zn['$' + _argv.method.toLowerCase()]({
+                return zn.http[_argv.method.toLowerCase()]({
                     url: Store.fixURL(_argv.url),
                     data: _argv.data,
                     headers: _argv.headers,
@@ -345,7 +345,7 @@
     var StoreClass = zn.Class({
         events: ['before', 'success', 'error', 'complete', 'after'],
         properties: {
-            host: 'http://0.0.0.0:8080/',
+            host: window.location.origin,
             engine: {
                 set: function (value){
                     this._engine = value;
@@ -411,5 +411,6 @@
         }
     });
 
-    zn.GLOBAL.Store = new StoreClass();
+    zn.store = zn.GLOBAL.Store = new StoreClass();
+
 })(zn);

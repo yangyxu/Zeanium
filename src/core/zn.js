@@ -5,7 +5,7 @@
 var __isServer = Object.prototype.toString.call(typeof process !== 'undefined' ? process : 0) === '[object process]';
 var zn = {
     VERSION: '0.0.1',
-    DEBUG: false,
+    DEBUG: true,
     ZN_PATH: '',
     PATH: '',
     isServer: __isServer,

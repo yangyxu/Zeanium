@@ -1,8 +1,8 @@
 {
     "name": "zeanium",
-    "version": "1.1.7",
+    "version": "1.1.8",
     "description": "Javascript framework for Node.js and Browser. Simple MVVM model in data and view module.",
-    "main": "index.js",
+    "main": "zn.core.js",
     "directories": {
         "test": "test"
     },

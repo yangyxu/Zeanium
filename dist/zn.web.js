@@ -265,14 +265,12 @@
         }
     });
 
-    var HttpClient = zn.Class({
+    zn.http = zn.Class({
+        static: true,
         properties: {
             timeout: 1000
         },
         methods: {
-            init: function(config){
-                this.sets(config);
-            },
             request: function (value, callback){
                 var _xhr = XHRPool.getInstance();
                 zn.each(value, function(v, k){
@@ -300,15 +298,6 @@
                 return value.method = 'DELETE', this.request(value);
             }
         }
-    });
-
-    var _http = new HttpClient();
-
-    zn.extend(zn, {
-        $get: _http.get.bind(_http),
-        $post: _http.post.bind(_http),
-        $put: _http.put.bind(_http),
-        $delete: _http.delete.bind(_http)
     });
 
 })(zn);
@@ -458,7 +447,7 @@
                     return false;
                 }
 
-                return zn['$' + _argv.method.toLowerCase()]({
+                return zn.http[_argv.method.toLowerCase()]({
                     url: Store.fixURL(_argv.url),
                     data: _argv.data,
                     headers: _argv.headers,
@@ -660,7 +649,7 @@
     var StoreClass = zn.Class({
         events: ['before', 'success', 'error', 'complete', 'after'],
         properties: {
-            host: 'http://0.0.0.0:8080/',
+            host: window.location.origin,
             engine: {
                 set: function (value){
                     this._engine = value;
@@ -726,7 +715,8 @@
         }
     });
 
-    zn.GLOBAL.Store = new StoreClass();
+    zn.store = zn.GLOBAL.Store = new StoreClass();
+
 })(zn);
 
 (function (zn) {
@@ -755,27 +745,6 @@
             },
             clear: function () {
                 document.cookie = null;
-            }
-        }
-    });
-
-})(zn);
-
-(function (zn) {
-    
-    zn.date = zn.Class({
-        static: true,
-        methods: {
-            getSecond: function (value) {
-                var _value = value.substring(1,value.length)*1;
-                switch (value.substring(0,1)) {
-                    case 's':
-                        return _value * 1000;
-                    case 'h':
-                        return _value * 60 * 60 * 1000;
-                    case 'd':
-                        return _value * 24 * 60 * 60 * 1000;
-                }
             }
         }
     });

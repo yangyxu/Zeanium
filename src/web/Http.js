@@ -265,14 +265,12 @@
         }
     });
 
-    var HttpClient = zn.Class({
+    zn.http = zn.Class({
+        static: true,
         properties: {
             timeout: 1000
         },
         methods: {
-            init: function(config){
-                this.sets(config);
-            },
             request: function (value, callback){
                 var _xhr = XHRPool.getInstance();
                 zn.each(value, function(v, k){
@@ -300,15 +298,6 @@
                 return value.method = 'DELETE', this.request(value);
             }
         }
-    });
-
-    var _http = new HttpClient();
-
-    zn.extend(zn, {
-        $get: _http.get.bind(_http),
-        $post: _http.post.bind(_http),
-        $put: _http.put.bind(_http),
-        $delete: _http.delete.bind(_http)
     });
 
 })(zn);
