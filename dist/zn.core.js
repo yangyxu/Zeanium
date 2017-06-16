@@ -2411,7 +2411,7 @@ if (__isServer) {
             every: function (handler, context){
                 return this.on('every', handler, context || this), this;
             },
-            unshift: function (){
+            unshift: function (handler, context){
                 var _task = {
                     handler: handler,
                     context: context || this
