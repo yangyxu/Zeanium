@@ -2344,6 +2344,7 @@ if (__isServer) {
         events: [
             'clear',
             'push',
+            'unshift',
             'pause',
             'resume',
             'exception',
@@ -2409,6 +2410,21 @@ if (__isServer) {
             },
             every: function (handler, context){
                 return this.on('every', handler, context || this), this;
+            },
+            unshift: function (){
+                var _task = {
+                    handler: handler,
+                    context: context || this
+                }, _first = this._tasks[0];
+
+                if(_first){
+                    _task.next = _first;
+                    _first.previous = _task;
+                }
+
+                this._tasks.unshift(_task);
+                this.fire('unshift', _task);
+                return this;
             },
             push: function (handler, context){
                 var _task = {
