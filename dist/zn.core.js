@@ -2343,8 +2343,7 @@ if (__isServer) {
     var Queue = zn.Class({
         events: [
             'clear',
-            'push',
-            'unshift',
+            'insert',
             'pause',
             'resume',
             'exception',
@@ -2412,35 +2411,74 @@ if (__isServer) {
                 return this.on('every', handler, context || this), this;
             },
             unshift: function (handler, context){
-                var _task = {
-                    handler: handler,
-                    context: context || this
-                }, _first = this._tasks[0];
-
-                if(_first){
-                    _task.next = _first;
-                    _first.previous = _task;
-                }
-
-                this._tasks.unshift(_task);
-                this.fire('unshift', _task);
-                return this;
+                return this.insert(handler, context, 0), this;
             },
             push: function (handler, context){
+                return this.insert(handler, context, -1), this;
+            },
+            inserts: function (handlers, context, index){
+                var _tasks = handlers||[],
+                    _index = index || 0,
+                    _first = this._tasks[0],
+                    _last = null,
+                    _task = null;
+                _tasks.map(function (handler){
+                    _task = {
+                        handler: handler,
+                        context: context || this
+                    };
+
+                    if(_last){
+                        _task.previous = _last;
+                        _last.next = _task;
+                    }
+                    _last = _task;
+
+                    return _task;
+                }.bind(this));
+
+                if(_first){
+                    _last.next = _first;
+                    _first.previous = _last;
+                }
+
+                _tasks.unshift(0);
+                _tasks.unshift(_index);
+
+                return this._tasks.splice.apply(null, _tasks), this;
+            },
+            insert: function (handler, context, index){
                 var _task = {
                     handler: handler,
                     context: context || this
-                };
+                }, _index = index || -1;
 
-                if(this._lastTask){
-                    _task.previous = _task;
-                    this._lastTask.next = _task;
+                switch (_index) {
+                    case -1:
+                        if(this._lastTask){
+                            _task.previous = _task;
+                            this._lastTask.next = _task;
+                        }
+
+                        this._lastTask = _task;
+                        this._tasks.push(_task);
+                        break;
+                    case 0:
+                        var _first = this._tasks[0];
+
+                        if(_first){
+                            _task.next = _first;
+                            _first.previous = _task;
+                        }
+
+                        this._tasks.unshift(_task);
+                        break;
+                    default :
+                        this._tasks.splice(_index, 0, _task);
+                        break;
                 }
 
-                this._lastTask = _task;
-                this._tasks.push(_task);
-                this.fire('push', _task);
-                return this;
+                return this.fire('insert', _task), this;
             },
             getTaskProcessor: function (){
                 var _tp = null, _len = this._taskProcessor.length;
