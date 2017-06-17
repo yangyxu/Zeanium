@@ -2445,7 +2445,7 @@ if (__isServer) {
                 _tasks.unshift(0);
                 _tasks.unshift(_index);
 
-                return this._tasks.splice.apply(null, _tasks), this;
+                return this._tasks.splice.apply(Array, _tasks), this;
             },
             insert: function (handler, context, index){
                 var _task = {
