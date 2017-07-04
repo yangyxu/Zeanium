@@ -23,6 +23,11 @@
             //return zn.format.call(this, this, arguments);
 
             return _self.toString();
+        },
+        firstUpperCase: function (value){
+            return value.replace(/\b(\w)(\w*)/g, function($0, $1, $2) {
+                return $1.toUpperCase() + $2;
+            });
         }
     };
 

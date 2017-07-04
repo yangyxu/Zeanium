@@ -135,7 +135,7 @@
                     _first = this._tasks[0],
                     _last = null,
                     _task = null;
-                _tasks.map(function (handler){
+                _tasks = _tasks.map(function (handler){
                     _task = {
                         handler: handler,
                         context: context || this

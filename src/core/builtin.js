@@ -5,6 +5,12 @@
     var __toString = Object.prototype.toString;
 
     var __builtin__ = {
+        isNull: function (value){
+            return value === null || value === undefined;
+        },
+        isNotNull: function (value){
+            return value !== null && value !== undefined;
+        },
         idle: function (){
             // empty handler
         },

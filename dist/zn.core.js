@@ -79,6 +79,12 @@ if (__isServer) {
     var __toString = Object.prototype.toString;
 
     var __builtin__ = {
+        isNull: function (value){
+            return value === null || value === undefined;
+        },
+        isNotNull: function (value){
+            return value !== null && value !== undefined;
+        },
         idle: function (){
             // empty handler
         },
@@ -458,6 +464,11 @@ if (__isServer) {
             //return zn.format.call(this, this, arguments);
 
             return _self.toString();
+        },
+        firstUpperCase: function (value){
+            return value.replace(/\b(\w)(\w*)/g, function($0, $1, $2) {
+                return $1.toUpperCase() + $2;
+            });
         }
     };
 
@@ -1005,7 +1016,7 @@ if (__isServer) {
         createSelf: function (){
             return new this.constructor.apply(this, Array.prototype.slice.call(arguments));
         },
-        getProperties: function(callback){
+        getProperties: function(handler, context){
             var _props = {};
             if(!this.getMeta || this._name_ == 'ZNObject'){
                 return _props;
@@ -1015,30 +1026,32 @@ if (__isServer) {
                 _mixins = this._mixins_;
 
             if(_super){
-                zn.extend(_props, _super.getProperties(callback));
+                zn.extend(_props, _super.getProperties(handler, context));
             }
 
             if(_mixins && _mixins.length){
                 zn.each(_mixins, function (mixin){
-                    zn.extend(_props, mixin.getProperties(callback));
+                    zn.extend(_props, mixin.getProperties(handler, context));
                 });
             }
 
-            zn.each(this.getMeta('properties'), function (prop, index){
-                var _callback = callback && callback(index, prop)===false;
-                if(!_callback){
-                    if(!prop.hidden){
-                        _props[index] = prop;
-                    }
+            zn.each(this.getMeta('properties'), function (prop, name){
+                var _callback = handler && handler.call(context || this, prop, name, _props);
+                if(_callback === false || _callback === -1){
+                    return _callback;
                 }
-            });
+
+                if(!prop.hidden){
+                    _props[name] = prop;
+                }
+            }, this);
 
             return _props;
         },
-        getPropertie: function (name){
+        getProperty: function (name){
             var _prop = null;
             if(name){
-                zn.each(this.getProperties(), function (field, key){
+                this.getProperties(function (prop, key){
                     if(name == key){
                         _prop = field;
                     }
@@ -1047,6 +1060,9 @@ if (__isServer) {
             }
 
             return _prop;
+        },
+        existProperty: function (name){
+            return !!this.getProperty(name);
         },
         /**
          * Get the meta data of the class.
@@ -1063,7 +1079,11 @@ if (__isServer) {
          * @returns {*}
          */
         setMeta: function (name, value) {
-            return this._meta_[name] = value, this;
+            if(name && value){
+                this._meta_[name] = value;
+            }
+
+            return this;
         },
         /**
          * Define an event.
@@ -1138,7 +1158,7 @@ if (__isServer) {
             return _json;
         },
         getProperties: function (){
-            return this.constructor.getProperties();
+            return this.constructor.getProperties.apply(this, arguments);
         },
         getPropertie: function (name){
             return this.constructor.getPropertie(name);
@@ -1439,7 +1459,7 @@ if (__isServer) {
                     _Class.defineEvent(event, {}, _Class);
                 });
 
-                zn.each(_meta.properties || _meta.props, function (value, key) {
+                zn.each(_meta.properties, function (value, key) {
                     _Class.defineProperty(key, zn.is(value, 'object') ? value : { value: value }, _Class);
                 });
 
@@ -1534,6 +1554,10 @@ if (__isServer) {
             _super = _args.super,
             _meta = _args.meta,
             _init = _meta.methods.init;
+
+        _meta.properties = _meta.properties || _meta.props;
+        _meta.props = null;
+        delete _meta.props;
 
         var ZNClass, _SuperClass, _prototype;
 
@@ -2422,7 +2446,7 @@ if (__isServer) {
                     _first = this._tasks[0],
                     _last = null,
                     _task = null;
-                _tasks.map(function (handler){
+                _tasks = _tasks.map(function (handler){
                     _task = {
                         handler: handler,
                         context: context || this
@@ -2594,7 +2618,7 @@ if (__isServer) {
                     throw new Error();
                 } catch(e) {
                     if(zn.DEBUG && zn.CONSOLE_ERROR){
-                        console.log(e);
+                        console.log(e.stack);
                     }
 
                     return e.stack.split('\n')[5].replace(/\(/g, '').replace(/\)/g, '').split('/').pop();

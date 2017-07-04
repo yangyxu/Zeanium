@@ -356,7 +356,7 @@
         createSelf: function (){
             return new this.constructor.apply(this, Array.prototype.slice.call(arguments));
         },
-        getProperties: function(callback){
+        getProperties: function(handler, context){
             var _props = {};
             if(!this.getMeta || this._name_ == 'ZNObject'){
                 return _props;
@@ -366,30 +366,32 @@
                 _mixins = this._mixins_;
 
             if(_super){
-                zn.extend(_props, _super.getProperties(callback));
+                zn.extend(_props, _super.getProperties(handler, context));
             }
 
             if(_mixins && _mixins.length){
                 zn.each(_mixins, function (mixin){
-                    zn.extend(_props, mixin.getProperties(callback));
+                    zn.extend(_props, mixin.getProperties(handler, context));
                 });
             }
 
-            zn.each(this.getMeta('properties'), function (prop, index){
-                var _callback = callback && callback(index, prop)===false;
-                if(!_callback){
-                    if(!prop.hidden){
-                        _props[index] = prop;
-                    }
+            zn.each(this.getMeta('properties'), function (prop, name){
+                var _callback = handler && handler.call(context || this, prop, name, _props);
+                if(_callback === false || _callback === -1){
+                    return _callback;
                 }
-            });
+
+                if(!prop.hidden){
+                    _props[name] = prop;
+                }
+            }, this);
 
             return _props;
         },
-        getPropertie: function (name){
+        getProperty: function (name){
             var _prop = null;
             if(name){
-                zn.each(this.getProperties(), function (field, key){
+                this.getProperties(function (prop, key){
                     if(name == key){
                         _prop = field;
                     }
@@ -398,6 +400,9 @@
             }
 
             return _prop;
+        },
+        existProperty: function (name){
+            return !!this.getProperty(name);
         },
         /**
          * Get the meta data of the class.
@@ -414,7 +419,11 @@
          * @returns {*}
          */
         setMeta: function (name, value) {
-            return this._meta_[name] = value, this;
+            if(name && value){
+                this._meta_[name] = value;
+            }
+
+            return this;
         },
         /**
          * Define an event.
@@ -489,7 +498,7 @@
             return _json;
         },
         getProperties: function (){
-            return this.constructor.getProperties();
+            return this.constructor.getProperties.apply(this, arguments);
         },
         getPropertie: function (name){
             return this.constructor.getPropertie(name);
@@ -790,7 +799,7 @@
                     _Class.defineEvent(event, {}, _Class);
                 });
 
-                zn.each(_meta.properties || _meta.props, function (value, key) {
+                zn.each(_meta.properties, function (value, key) {
                     _Class.defineProperty(key, zn.is(value, 'object') ? value : { value: value }, _Class);
                 });
 
@@ -885,6 +894,10 @@
             _super = _args.super,
             _meta = _args.meta,
             _init = _meta.methods.init;
+
+        _meta.properties = _meta.properties || _meta.props;
+        _meta.props = null;
+        delete _meta.props;
 
         var ZNClass, _SuperClass, _prototype;
 

@@ -65,7 +65,7 @@
                     throw new Error();
                 } catch(e) {
                     if(zn.DEBUG && zn.CONSOLE_ERROR){
-                        console.log(e);
+                        console.log(e.stack);
                     }
 
                     return e.stack.split('\n')[5].replace(/\(/g, '').replace(/\)/g, '').split('/').pop();
