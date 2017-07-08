@@ -1815,12 +1815,19 @@ if (__isServer) {
                         Module.unloadModule(_module.parent.path);
                     }
                 } catch (e) {
-                    zn.error(e.message);
+                    zn.error('Module unloadModule error: ', e.message);
+                    console.log(e);
                 }
 
                 return this;
             },
             loadModule: function (path, callback, parent){
+                if(SLASH === '/') {
+                    path = path.split('\\').join(SLASH);
+                }else {
+                    path = path.split('/').join(SLASH);
+                }
+
                 if (zn.is(path, Module)){
                     return path.load(callback);
                 }
@@ -1843,9 +1850,10 @@ if (__isServer) {
                     _path = __path.formatPath(path, parent);
                     if(!_doc) {
                         try {
-                            _path = require.resolve(_path);
+                            _path = require.resolve(_path, parent);
                         } catch (e) {
                             zn.error('node require.resolve(' + _path + '): ', e.message);
+                            console.log(e);
                             return callback({});
                         }
                     }
@@ -1900,8 +1908,8 @@ if (__isServer) {
                 try {
                     _value = require(_path);
                 } catch (e) {
-                    console.error(e);
                     zn.error('Node.js require('+_path+') error: ', e.message);
+                    console.error(e);
                 } finally {
                     _callback(_value);
                 }
