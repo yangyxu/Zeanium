@@ -17,7 +17,11 @@ module.exports = function (grunt) {
             web: {
                 src: '<%= pkg.web %>'
             },
+            reactnative: {
+                src: '<%= pkg.reactnative %>'
+            },
             options: {
+                reporterOutput: null,
                 eqnull: true
             }
         },
@@ -33,6 +37,10 @@ module.exports = function (grunt) {
             web: {
                 src: '<%= pkg.web %>',
                 dest: 'dist/zn.web.js'
+            },
+            reactnative: {
+                src: '<%= pkg.reactnative %>',
+                dest: 'dist/zn.reactnative.js'
             }
         },
         uglify: {
@@ -57,6 +65,15 @@ module.exports = function (grunt) {
             web: {
                 src: ['dist/zn.web.js'],
                 dest: 'dist/zn.web.minx.js',
+                options: {
+                    beautify: {
+                        ascii_only: true
+                    }
+                }
+            },
+            reactnative: {
+                src: ['dist/zn.reactnative.js'],
+                dest: 'dist/zn.reactnative.minx.js',
                 options: {
                     beautify: {
                         ascii_only: true
