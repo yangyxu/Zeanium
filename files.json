@@ -10,7 +10,8 @@
         "src/util/Queue.js",
         "src/util/Logger.js",
         "src/util/Async.js",
-        "src/util/QueryString.js"
+        "src/util/QueryString.js",
+        "src/util/Data.js"
     ],
     "data": [
         "src/data/List.js",
@@ -40,6 +41,7 @@
         "src/util/Logger.js",
         "src/util/Async.js",
         "src/util/QueryString.js",
+        "src/util/Data.js",
         "src/web/Http.js",
         "src/web/Store.js",
         "src/web/Cookie.js"
