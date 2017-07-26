@@ -8,14 +8,15 @@ var zn = {
     DEBUG: true,
     ZN_PATH: '',
     PATH: '',
-    isServer: __isServer,
     GLOBAL: (function () {
         if(__isServer){
             return global;
         }else {
             return window;
         }
-    }).call(null)
+    }).call(null),
+    isServer: __isServer,
+    plugin: {}
 };
 
 zn.GLOBAL.zn = zn;

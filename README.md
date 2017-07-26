@@ -5,7 +5,9 @@
 
 ## Introduction
 
-Zeanium is fully oop javascript framework, you can define Class object、module and soon. It support front-end and back-end in the same api what we provide.
+Zeanium is fully oop javascript framework, It support node.js、Browser、React Native.
+
+You can define Class object、module and soon. It support front-end and back-end in the same api what we provide.
 
 
 ## Builtin api list
