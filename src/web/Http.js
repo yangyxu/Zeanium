@@ -89,6 +89,7 @@
             asyns: true,
             username: null,
             password: null,
+            withCredentials: false,
             headers: {
                 get: function(){
                     return zn.overwrite({
@@ -184,12 +185,12 @@
                     _method = this._method.toUpperCase();
                 if(_method === 'GET'){
                     if(_data){
-                        _url = _url + '?' + _data;
+                        _url = _url + '?' + zn.querystring.stringify(_data);
                     }
                     _data = null;
                 }
-                if(_XHR.readyState<2){
-                    //_XHR.withCredentials = true;
+                if(this.get('withCredentials')){
+                    _XHR.withCredentials = true;
                 }
 
                 _XHR.open(_method, _url, this.asyns);
@@ -267,12 +268,47 @@
 
     zn.http = zn.Class({
         static: true,
-        properties: {
-            timeout: 1000
-        },
         methods: {
-            request: function (value, callback){
+            init: function (){
+                this._config = {
+                    host: window.location.origin,
+                    port: null
+                };
+            },
+            setHost: function (host, port){
+                return zn.extend(this._config, {
+                    host: host,
+                    port: port
+                });
+            },
+            getURL: function (){
+                if(this._config.port){
+                    return this._config.host.split(':')[0] + this._config.port;
+                }else {
+                    return this._config.host;
+                }
+            },
+            fixURL: function (url) {
+                if(!url){
+                    return '';
+                }
+
+                if(url && (url.indexOf('http://') == -1 || url.indexOf('https://') == -1)){
+                    url = this.getURL() + url;
+                }
+
+                return url;
+            },
+            request: function (value, callback, method){
                 var _xhr = XHRPool.getInstance();
+                if(value.url){
+                    value.url = this.fixURL(value.url);
+                }
+
+                if(method){
+                    value.method = method;
+                }
+
                 zn.each(value, function(v, k){
                     if(typeof v=='function'){
                         _xhr.on(k, v, this);
@@ -285,17 +321,32 @@
 
                 return _xhr.send(value);
             },
-            get: function (value){
-                return value.method = 'GET', this.request(value);
+            fixArguments: function (){
+                var _argv = Array.prototype.slice.call(arguments),
+                    _value = {};
+                if(_argv.length == 1 && typeof _argv[0] == 'object'){
+                    _value = _argv[0];
+                }else {
+                    _value = {
+                        url: _argv[0],
+                        data: _argv[1],
+                        headers: _argv[2]
+                    };
+                }
+
+                return _value;
+            },
+            get: function (){
+                return this.request(this.fixArguments.apply(this, arguments), null, 'GET');
             },
             post: function (value){
-                return value.method = 'POST', this.request(value);
+                return this.request(this.fixArguments.apply(this, arguments), null, 'POST');
             },
             put: function (value){
-                return value.method = 'PUT', this.request(value);
+                return this.request(this.fixArguments.apply(this, arguments), null, 'PUT');
             },
             delete: function (value){
-                return value.method = 'DELETE', this.request(value);
+                return this.request(this.fixArguments.apply(this, arguments), null, 'DELETE');
             }
         }
     });

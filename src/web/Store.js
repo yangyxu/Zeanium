@@ -50,7 +50,7 @@
             },
             exec: function (url, data, method, headers){
                 var _argv = this.validateArgv(url, data, method, headers);
-                var _result = Store.fire('before', _argv);
+                var _result = zn.store.fire('before', _argv);
                 if(_result===false){
                     return false;
                 }
@@ -62,7 +62,7 @@
                 return _argv;
             },
             __onComplete: function (data){
-                var _result = Store.fire('after', data);
+                var _result = zn.store.fire('after', data);
                 if(_result===false){
                     return false;
                 }
@@ -72,7 +72,7 @@
                 }
             },
             __onSuccess: function (data, xhr){
-                var _result = Store.fire('success', data, xhr);
+                var _result = zn.store.fire('success', data, xhr);
                 if(_result===false){
                     return false;
                 }
@@ -82,7 +82,7 @@
                 }
             },
             __onError: function (xhr){
-                var _result = Store.fire('success', xhr);
+                var _result = zn.store.fire('success', xhr);
                 if(_result===false){
                     return false;
                 }
@@ -130,7 +130,7 @@
                 //var _argv = this.super(url, data, method, headers);
 
                 var _argv = this.validateArgv(url, data, method, headers);
-                var _result = Store.fire('before', _argv);
+                var _result = zn.store.fire('before', _argv);
                 if(_result===false){
                     return false;
                 }
@@ -144,7 +144,7 @@
                 }
 
                 return zn.http[_argv.method.toLowerCase()]({
-                    url: Store.fixURL(_argv.url),
+                    url: _argv.url,
                     data: _argv.data,
                     headers: _argv.headers,
                     success: function (sender, data, xhr){
@@ -178,7 +178,7 @@
                 //var _argv = this.super(url, data, method, headers);
 
                 var _argv = this.validateArgv(url, data, method, headers);
-                var _result = Store.fire('before', _argv);
+                var _result = zn.store.fire('before', _argv);
                 if(_result===false){
                     return false;
                 }
@@ -231,7 +231,7 @@
                 }
 
                 return new Promise(function (resolve, reject) {
-                    fetch(Store.fixURL(_url), _clone).then(function (response) {
+                    fetch(zn.http.fixURL(_url), _clone).then(function (response) {
                         return response.json();
                     }).then(function (responseData) {
                         _self.__onSuccess(responseData);
@@ -314,7 +314,7 @@
             	} else {
                     return new Promise(function (resolve, reject) {
                         if(_data){
-                            if(Store.fire('success', _data) === false){
+                            if(zn.store.fire('success', _data) === false){
                                 return false;
                             }
                             if(_self._argv.onSuccess){
@@ -325,7 +325,7 @@
                             }
                             resolve(_data);
                         }else {
-                            if(Store.fire('error', _data) === false){
+                            if(zn.store.fire('error', _data) === false){
                                 return false;
                             }
                             if(_self._argv.onError){
@@ -345,7 +345,6 @@
     var StoreClass = zn.Class({
         events: ['before', 'success', 'error', 'complete', 'after'],
         properties: {
-            host: window.location.origin,
             engine: {
                 set: function (value){
                     this._engine = value;
@@ -361,6 +360,9 @@
             headers: {}
         },
         methods: {
+            dataSource: function (data, argv) {
+                return new DataSource(data, argv);
+            },
             request: function (url, data, method, headers){
                 var _class = null;
                 if(this._engine=='Fetcher'){
@@ -369,7 +371,7 @@
                     _class = XHR;
                 }
 
-                return new _class(url, data, method, headers);
+                return new _class(url, data, method, headers || this.get('headers'));
             },
             post: function (url, data, headers){
                 return this.request(url, data, "POST", headers);
@@ -381,32 +383,7 @@
                 return this.request(url, data, "PUT", headers);
             },
             get: function (url, data, headers){
-                var _argv = [];
-                zn.each(data, function (value, key){
-                    _argv.push(key + '=' + (zn.is(value, 'object')?JSON.stringify(value):value));
-                });
-
-                return this.request(url, _argv.join('&'), "GET", headers);
-            },
-            setHost: function (value){
-                this._host = value;
-            },
-            getHost: function (){
-                return this._host;
-            },
-            fixURL: function (url) {
-                if(!url){
-                    return '';
-                }
-
-                if(url && url.indexOf('http://') === -1){
-                    url = this._host + url;
-                }
-
-                return url;
-            },
-            dataSource: function (data, argv) {
-                return new DataSource(data, argv);
+                return this.request(url, data, "GET", headers);
             }
         }
     });

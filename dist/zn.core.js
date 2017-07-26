@@ -2987,6 +2987,10 @@ if (__isServer) {
                 return this.overwrite(this._config, value), this;
             },
             parse: function (value, options){
+                if(typeof value == 'object'){
+                    return value;
+                }
+
                 var _config = zn.extend({}, this._config, options),
                     _object = {},
                     _equal = _config.equal,
@@ -3013,7 +3017,7 @@ if (__isServer) {
                     _key = decodeURIComponent(_key);
                     _value = decodeURIComponent(_value);
 
-                    if(!hasOwnProperty(_object, _key)){
+                    if(!(_object).hasOwnProperty(_key)){
                         _object[_key] = _value;
                     }else if(zn.is(_object[_key], 'array')){
                         _object[_key].push(_value);
@@ -3025,6 +3029,9 @@ if (__isServer) {
                 return _object;
             },
             stringify: function (object, options){
+                if(typeof object == 'string'){
+                    return object;
+                }
                 var _config = zn.extend({}, this._config, options),
                     _strings = [],
                     _self = this,
@@ -3059,7 +3066,7 @@ if (__isServer) {
                     case 'array':
                         return JSON.stringify(value);
                     case 'number':
-                        return isFinite(value) ? value : '';
+                        return isFinite(value) ? value : '0';
                     default:
                         return '';
                 }
