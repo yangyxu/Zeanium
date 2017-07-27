@@ -711,22 +711,18 @@
                         return XHR;
                     }
                 }
-            },
-            headers: {}
+            }
         },
         methods: {
+            fixURL: function (url){
+                return zn.http.fixURL(url), this;
+            },
             dataSource: function (data, argv) {
                 return new DataSource(data, argv);
             },
             request: function (url, data, method, headers){
-                var _class = null;
-                if(this._engine=='Fetcher'){
-                    _class = Fetcher;
-                }else {
-                    _class = XHR;
-                }
-
-                return new _class(url, data, method, headers || this.get('headers'));
+                var _class = this.engine;
+                return new _class(url, data, method, headers);
             },
             post: function (url, data, headers){
                 return this.request(url, data, "POST", headers);

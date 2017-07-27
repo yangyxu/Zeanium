@@ -38,6 +38,10 @@ module.exports = function (grunt) {
                 src: '<%= pkg.web %>',
                 dest: 'dist/zn.web.js'
             },
+            znweb: {
+                src: ['<%= pkg.core %>', '<%= pkg.web %>'],
+                dest: 'dist/znweb.js'
+            },
             reactnative: {
                 src: '<%= pkg.reactnative %>',
                 dest: 'dist/zn.reactnative.js'
@@ -81,7 +85,7 @@ module.exports = function (grunt) {
                 }
             },
             znweb: {
-                src: ['dist/zn.core.js', 'dist/zn.web.js'],
+                src: ['dist/znweb.js'],
                 dest: 'dist/znweb.minx.js',
                 options: {
                     beautify: {
