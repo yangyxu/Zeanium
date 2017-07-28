@@ -1,80 +1,90 @@
 # Zeanium
 
-[简体中文文档](https://github.com/yangyxu/Zeanium/blob/master/README_zh-CN.md)
+[英文中文文档](https://github.com/yangyxu/Zeanium/blob/master/README_EN.md)
 
 
-## Introduction
+## 介绍
 
-Zeanium is fully oop javascript framework, It support node.js、Browser、React Native.
+Zeanium是完全面向对象的JavaScript底层框架, 它基于JavaScript语言本身封装, 没有任何前端、后端、第三方库限制, 只要能运行JavaScript的地方就可以运行zeanium核心底层库。你可以自由的使用面向对象的继承、封装、多态等等特性随意定义自己的类和模块。一次编写可以在前端、后端都可以运行。
 
-You can define Class object、module and soon. It support front-end and back-end in the same api what we provide.
+## 相关产品
 
+- [zeanium-node](https://github.com/yangyxu/zeanium-node): zeanium-node是基于[zeanium](https://github.com/yangyxu/zeanium), 是专门为nodejs开发的后端框架，提供了基础的`cache`、`cli`、`database`、`io`、`net`、`parser`、`session`、`template`
+- [zeanium-react-web](https://github.com/yangyxu/zeanium-react-web): 基于zeanium和react同时支持web和wap端的前端UI框架
+- [zeanium-react-native](https://github.com/yangyxu/zeanium-react-native): 基于zeanium和react native的Android/ios应用原生开发框架
 
-## Builtin api list
+## 官方QQ群: 627104335
 
-- `zn.idle()`: empty function
-- `zn.idleArray()`: return empty array
-- `zn.idleObject()`: return empty object;
-- `zn.format(string, argv...)`: string is input value, argv is any string arguments. Such as:
+有任务问题可以添加qq群进行咨询
+
+## 顶级内置API接口
+
+- `zn.idle()`: 空函数
+- `zn.idleArray()`: 返回空数组
+- `zn.idleObject()`: 返回空对象
+- `zn.format(string, argv...)`: 格式化字符串, 可以是多个参数, 也可以是一个数组参数, 字符串里面用{xx}类似作为占位符, 根据参数索引序列一次替换, 并返回替换好之后的最新字符串。
+
+比如以下代码:
 
     ```javascript
     1. zn.format('hello {0}, you are {1} year.', 'yangyxu', '2017');
     2. zn.format('hello {0}, you are {1} year.', ['yangyxu', '2017']);
     ```
-    The code 1 is the same with code 2. The output is "hello yangyxu, you are 2017 year."
-- `zn.uuid()`: return uuid string value
-- `zn.serializeJSON(jsonObject)`: serialize json data
-- `zn.fix(target, argv...)`: if target has no key in arguments key, the function will extend object arguments value to target
-- `zn.extend(target, argv...)`: the function will extend object arguments value to target
-- `zn.overwrite(target, argv...)`: get argv value to overwrite the target value
-- `zn.path(target, path, value)`: set or get the value for the path in target
-- `zn.invoke(target, path, args)`: args as arguments, invoke the target path function
-- `zn.deepEachObject(data, handler, context)`: deep each object, data the input value, handler is each function, context is the scope for each function, the output is object value;
-- `zn.arrayValueToObject(data, handler, context)`: the function is the same with zn.deepEachObject, but the data type of input is array;
-- `zn.toString(value)`: get string value;
-- `zn.each(target, callback, context)`: each target, callback is the each function, context is scope for each function
-- `zn.clone(target)`: clone target to a copy
-- `zn.type(target)`: get type for target
-- `zn.is(target, type)`: judge target type is or not type
-- `zn.may(target, name)`: judge target has "name" event
-- `zn.can(target, name)`: judge target can exec "name" event
-- `zn.has(target, name)`: judge target has "name" property
-- `zn.get(target, name)`: get "name" value from target object
-- `zn.set(target, name, value)`: set value to target name property
-- `zn.gets(target)`: get all properties from target
-- `zn.sets(target, values)`: set object to target
+    第一行代码和第二行代码效果是一样的. 输出都是 "hello yangyxu, you are 2017 year."
+- `zn.uuid()`: 返回一个uuid字符串值
+- `zn.serializeJSON(jsonObject)`: 序列化json数据
+- `zn.fix(target, argv...)`: 根据argv补齐target的属性集
+- `zn.extend(target, argv...)`: 根据argv只扩展target的属性集
+- `zn.overwrite(target, argv...)`: 根据argv值重写target的属性集
+- `zn.path(target, path, value)`: 设置或获取对象target属性路径path下的值
+- `zn.invoke(target, path, args)`: 执行对象target路径path下的方法, argv作为输入参数
+- `zn.deepEachObject(data, handler, context)`: 深度遍历data对象, handler是遍历函数, context是每次遍历的作用域, 并返回一个新的对象;
+- `zn.arrayValueToObject(data, handler, context)`: 遍历数组并返回一个对象
+- `zn.toString(value)`: 获取value toString的值
+- `zn.each(target, callback, context)`: 遍历对象target, callback是遍历函数, context是callback的作用域
+- `zn.clone(target)`: 克隆target对象
+- `zn.type(target)`: 获取target类型
+- `zn.is(target, type)`: 判断对象target的类型是否是type类型
+- `zn.may(target, name)`: 判断对象target是否能执行"name"时间
+- `zn.can(target, name)`: 判断对象target是否可以执行"name"事件
+- `zn.has(target, name)`: 判断对象target是否有"name"属性
+- `zn.get(target, name)`: 获取target对象属性为"name"的值
+- `zn.set(target, name, value)`: 给target对象设置值
+- `zn.gets(target)`: 获取target对象所有属性值
+- `zn.sets(target, values)`: 给对象target 批量设置值
 
 
-## Class
+## 类
 
-### Define Class
-The class has `static`、`statics`、`mixins` 、`properties`、`events`、`methods` five key word;
+### 定义类
+每个类都有 `static`、`statics`、`mixins` 、`properties`、`events`、`methods` 6个关键之;
 
-- `static`: `true` or `false`, default value is `false`, if value is `true`, the class is static class, can't be instantiated. If you new the class, the system will throw `TypeError`.
-- `statics`: define class static property or method.
-- `mixins`: define Super Class collection.
-- `properties`: define class property, value is object.
-- `events`: define class event, value is array. `init` is the constructor function for class.
-- `methods`: define class method, value is array.
+- `static`: `true` 或 `false`, 默认值是`false`, 值为`true`时, 整个类是静态类, 不允许被实例化, 如果强制实例化, 系统会抛出`TypeError`错误。
+- `statics`: 定义类的静态属性和方法
+- `mixins`: 继承多类, 常规是继承是单向继承, 只有一个父类, 但是有些需求是需要继承多类的就可以使用mixins关键字, 如：mixins: [User, Person]
+- `properties`: 定义类的属性集, 是一个json对象
+- `events`: 定义类的事件集, 是一个数组对象 配合对象的on/off使用
+- `methods`: 定义类的方法集, 是对象类型。`init` 是每个类唯一指定的构造函数, 每次实例化对象是，如果有init函数则一定会调用。
 
-Define Person Class
+定义 人 类
 ```javascript
 var Person = zn.Class({
-    static: false,              //defalut value is false
+    static: false,              //默认值是false, 如果是true, 定义类的时候就会执行 init 构造函数
     statics: {
-        count: 1                //class static property,
-        getCount: function (){  //class static method,
+        count: 1                //定义静态属性,
+        getCount: function (){  //定义静态方法,
             return this._count;
         }
     },
     properties: {
-        name: '',       //define `name` property, value is ''
+        name: '',                   //定义属性名“name”的属性
         age: {
-            value: 10,          //define `age` default value
-            get: function (value){ //define `age` get method
+            value: 10,              //value: 属性默认值
+            get: function (value){  //get: 定义属性get方法
                 this._age = value; (1)
+                //zeanium定义类属性时会自动定义“_”+属性名 的内部变量，后续所有操作都是基于内部变量
             },
-            set: function (){   //define `age` set method
+            set: function (){       //定义属性set方法
                 return this._age;
             }
         }
@@ -108,7 +118,7 @@ person1.set(name, "xu");//<2>
 3. define `say` customize method.
 
 
-Define Student
+定义学生类 学生是继承人类
 ```javascript
 var Student = zn.Class(Person, { //inherit Person, the Student Super is Person
     properties: {
@@ -148,7 +158,7 @@ _yangyxu.say();
 
 ```
 
-Define Teacher
+定义Teacher类
 ```javascript
 var Teacher = zn.Class(Person, { //inherit Person, the Student Super is Person
     properties: {
@@ -171,11 +181,11 @@ var _yangyxu = new Teacher('t1', 20);
 _yangyxu.teach();
 ```
 
-## Define Module
-Define module is using AMD.
+## 定义模块
+使用AMD方式定义模块
 
 
-Define zeanium module
+定义模块
 ```javascript
 zn.define([
     'node:http'  //If module is node module, you have to add "node:" prefix
@@ -193,7 +203,7 @@ zn.define([
 });
 ```
 
-## Documentation
+## 文档
 
 [http://www.zeanium.com](http://www.zeanium.com)
 

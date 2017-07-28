@@ -715,7 +715,7 @@
         },
         methods: {
             fixURL: function (url){
-                return zn.http.fixURL(url), this;
+                return zn.http.fixURL(url);
             },
             dataSource: function (data, argv) {
                 return new DataSource(data, argv);

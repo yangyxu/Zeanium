@@ -522,6 +522,36 @@ if (__isServer) {
         }
     };
 
+    /**
+     * Number.prototype.format(n, x)
+     *
+     * @param integer n: length of decimal
+     * @param integer x: length of sections
+     */
+    var __fixNumber__ = {
+        format: function (n, x){
+            var re = '\\d(?=(\\d{' + (x || 3) + '})+' + (n > 0 ? '\\.' : '$') + ')';
+            return this.toFixed(Math.max(0, ~~n)).replace(new RegExp(re, 'g'), '$&,');
+        },
+        sectionThree: function (){
+            return (this).toString().replace(/(\d)(?=(\d{3})+\.)/g, '$1,');
+        },
+        price: function (options){
+    		var _options = zn.extend({
+    			unit: 10000,
+    			unitText: '万',
+    			prefix: '',
+                decimal: 2,
+                sections: 3
+    		}, options);
+    		if(((this/_options.unit) > 1)&&(this%100 == 0)){
+                return (this/_options.unit).sectionThree() + _options.unitText;
+    		}else {
+    			return this.format(_options.decimal, _options.sections);
+    		}
+    	}
+    };
+
     var __fixFunction__ = {
         bind: function (context){
             var _self = this;
@@ -646,6 +676,7 @@ if (__isServer) {
     //zn.fix(Object, __fixObject__);
     //zn.fix(zn.GLOBAL.JSON, __fixJSON__);
     zn.fix(String.prototype, __fixStringPrototype__);
+    zn.fix(Number.prototype, __fixNumber__);
 
     /*
     try {
@@ -3366,7 +3397,7 @@ if (__isServer) {
         },
         methods: {
             fixURL: function (url){
-                return zn.http.fixURL(url), this;
+                return zn.http.fixURL(url);
             },
             dataSource: function (data, argv) {
                 return new DataSource(data, argv);
