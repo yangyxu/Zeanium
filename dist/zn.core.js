@@ -1839,13 +1839,19 @@ if (__isServer) {
                     if (module && module.parent) {
                         module.parent.children.splice(module.parent.children.indexOf(module), 1);
                     }
-                    require.cache[path] = null;
-                    var _module = Module.all[path];
 
-                    Module.all[path] = null;
+                    require.cache[path] = null;
+                    delete require.cache[path];
+                    module = null;
+
+                    var _module = Module.all[path];
                     if(_module&&_module.parent){
                         Module.unloadModule(_module.parent.path);
                     }
+
+                    Module.all[path] = null;
+                    delete Module.all[path];
+                    _module = null;
                 } catch (e) {
                     zn.error('Module unloadModule error: ', e.message);
                     console.log(e);

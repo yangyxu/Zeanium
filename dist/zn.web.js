@@ -869,6 +869,27 @@
     zn.dom = zn.Class({
         static: true,
         methods: {
+            init: function (){
+                this._roots = [];
+            },
+            createRootElement: function (tag, attrs){
+                var _tag = tag || 'div',
+                    _attrs = attrs || {},
+                    _dom = document.createElement(_tag);
+                for(var attr in _attrs){
+                    _dom.setAttribute(attr, _attrs[attr]);
+                }
+    			document.body.appendChild(_dom);
+
+                return this._roots.push(_dom), _dom;
+    		},
+    		removeAllRoots: function (){
+    			this._roots.forEach(function (dom){
+    				document.body.removeChild(dom);
+    			});
+
+    			return this._roots = [], this;
+    		},
             hasClass: function (target, className) {
                 return target.classList.contains(className);
             },
@@ -947,9 +968,9 @@
                     height: _h
                 };
             },
-            on: function(target, event, handler){
+            on: function(target, event, handler, useCapture){
                 if (target.addEventListener) {
-                    target.addEventListener(event, handler, false);
+                    target.addEventListener(event, handler, useCapture || false);
                 } else if (element.attachEvent) {
                     target.attachEvent('on' + event, handler);
                 } else {
