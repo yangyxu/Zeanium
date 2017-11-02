@@ -11,7 +11,8 @@
         "src/util/Logger.js",
         "src/util/Async.js",
         "src/util/QueryString.js",
-        "src/util/Data.js"
+        "src/util/Data.js",
+        "src/util/Util.js"
     ],
     "data": [
         "src/data/List.js",

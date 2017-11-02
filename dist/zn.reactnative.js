@@ -670,6 +670,31 @@ if (__isServer) {
         })()
     };
 
+    var __fixDate__ = {
+        format: function (fmt){
+            var o = {
+                "M+": this.getMonth() + 1, //月份
+                "d+": this.getDate(), //日
+                "h+": this.getHours(), //小时
+                "m+": this.getMinutes(), //分
+                "s+": this.getSeconds(), //秒
+                "q+": Math.floor((this.getMonth() + 3) / 3), //季度
+                "S": this.getMilliseconds() //毫秒
+            };
+            if (/(y+)/.test(fmt)){
+                fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+            }
+
+            for (var k in o){
+                if (new RegExp("(" + k + ")").test(fmt)){
+                    fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+                }
+            }
+
+            return fmt;
+        }
+    };
+
     zn.fix(Array, __fixArray__);
     zn.fix(Array.prototype, __fixArrayPrototype__);
     zn.fix(Function.prototype, __fixFunction__);
@@ -677,6 +702,7 @@ if (__isServer) {
     //zn.fix(zn.GLOBAL.JSON, __fixJSON__);
     zn.fix(String.prototype, __fixStringPrototype__);
     zn.fix(Number.prototype, __fixNumber__);
+    zn.fix(Date.prototype, __fixDate__);
 
     /*
     try {
@@ -1043,7 +1069,10 @@ if (__isServer) {
 
     var classMethods = {
         toString: function (){
-            return '{ ClassName: ' + (this._name_ || 'Anonymous') + ', ClassID: ' + this._id_ + ' }';
+            return JSON.stringify({
+                ClassName: this._name_ || 'Anonymous',
+                ClassID: this._id_
+            });
         },
         createSelf: function (){
             return new this.constructor.apply(this, Array.prototype.slice.call(arguments));
@@ -1809,6 +1838,9 @@ if (__isServer) {
     zn.date = zn.Class({
         static: true,
         methods: {
+            format: function (){
+
+            },
             getSecond: function (value) {
                 var _value = value.substring(1,value.length)*1;
                 switch (value.substring(0,1)) {
@@ -3336,6 +3368,7 @@ if (__isServer) {
 
             	if(_data.__id__){
                     _data.on('success', function (sender, data){
+                        data = (_self._argv.dataHandler && _self._argv.dataHandler(data)) || data;
                         if(_self._argv.onSuccess){
                             _self._argv.onSuccess(data);
                         }
@@ -3351,6 +3384,7 @@ if (__isServer) {
             	} else {
                     return new Promise(function (resolve, reject) {
                         if(_data){
+                            _data = (_self._argv.dataHandler && _self._argv.dataHandler(_data)) || _data;
                             if(zn.store.fire('success', _data) === false){
                                 return false;
                             }
@@ -3362,6 +3396,7 @@ if (__isServer) {
                             }
                             resolve(_data);
                         }else {
+                            _data = 'this._data is undefined.';
                             if(zn.store.fire('error', _data) === false){
                                 return false;
                             }

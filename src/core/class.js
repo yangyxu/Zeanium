@@ -351,7 +351,10 @@
 
     var classMethods = {
         toString: function (){
-            return '{ ClassName: ' + (this._name_ || 'Anonymous') + ', ClassID: ' + this._id_ + ' }';
+            return JSON.stringify({
+                ClassName: this._name_ || 'Anonymous',
+                ClassID: this._id_
+            });
         },
         createSelf: function (){
             return new this.constructor.apply(this, Array.prototype.slice.call(arguments));

@@ -18,6 +18,9 @@
     zn.date = zn.Class({
         static: true,
         methods: {
+            format: function (){
+
+            },
             getSecond: function (value) {
                 var _value = value.substring(1,value.length)*1;
                 switch (value.substring(0,1)) {

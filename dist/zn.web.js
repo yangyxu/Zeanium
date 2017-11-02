@@ -654,6 +654,7 @@
 
             	if(_data.__id__){
                     _data.on('success', function (sender, data){
+                        data = (_self._argv.dataHandler && _self._argv.dataHandler(data)) || data;
                         if(_self._argv.onSuccess){
                             _self._argv.onSuccess(data);
                         }
@@ -669,6 +670,7 @@
             	} else {
                     return new Promise(function (resolve, reject) {
                         if(_data){
+                            _data = (_self._argv.dataHandler && _self._argv.dataHandler(_data)) || _data;
                             if(zn.store.fire('success', _data) === false){
                                 return false;
                             }
@@ -680,6 +682,7 @@
                             }
                             resolve(_data);
                         }else {
+                            _data = 'this._data is undefined.';
                             if(zn.store.fire('error', _data) === false){
                                 return false;
                             }
