@@ -21,6 +21,29 @@
             format: function (){
 
             },
+            nowDateString: function (sep){
+                var date = new Date(),
+                    _year = date.getFullYear(),
+                    _month = date.getMonth() + 1,
+                    _date = date.getDate();
+
+                _month = _month < 10 ? '0' + _month : _month;
+                _date = _date < 10 ? '0' + _date : _date;
+
+                return [_year, _month, _date].join(sep || '');
+            },
+            nowTimeString: function (sep){
+                var date = new Date(),
+                    _h = date.getHours(),
+                    _m = date.getMinutes(),
+                    _s = date.getSeconds();
+
+                _h = _h < 10 ? '0' + _h : _h;
+                _m = _m < 10 ? '0' + _m : _m;
+                _s = _s < 10 ? '0' + _s : _s;
+
+                return [_h, _m, _s].join(sep || ':');
+            },
             getSecond: function (value) {
                 var _value = value.substring(1,value.length)*1;
                 switch (value.substring(0,1)) {
