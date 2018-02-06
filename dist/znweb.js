@@ -1883,7 +1883,7 @@ if (__isServer) {
                     _module = null;
                 } catch (e) {
                     zn.error('Module unloadModule error: ', e.message);
-                    console.log(e);
+                    console.error(e);
                 }
 
                 return this;
@@ -1899,7 +1899,15 @@ if (__isServer) {
                     return path.load(callback);
                 }
                 if (path.substring(0, 5) === 'node:') {
-                    return callback(require(path.substring(5)));
+                    var _value = {};
+                    try {
+                        _value = require(path.substring(5));
+                    } catch (e) {
+                        zn.error('node require(' + path.substring(5) + ') error: ', e.message);
+                        console.error(e);
+                    } finally {
+                        return callback(_value);
+                    }
                 }
 
                 var _path = null;
@@ -1919,8 +1927,8 @@ if (__isServer) {
                         try {
                             _path = require.resolve(_path, parent);
                         } catch (e) {
-                            zn.error('node require.resolve(' + _path + '): ', e.message);
-                            console.log(e);
+                            zn.error('node require.resolve(' + _path + ') error: ', e.message);
+                            console.error(e);
                             return callback({});
                         }
                     }
@@ -1975,7 +1983,7 @@ if (__isServer) {
                 try {
                     _value = require(_path);
                 } catch (e) {
-                    zn.error('Node.js require('+_path+') error: ', e.message);
+                    zn.error('node require('+_path+') error: ', e.message);
                     console.error(e);
                 } finally {
                     _callback(_value);
@@ -3391,7 +3399,15 @@ if (__isServer) {
                     this._data = value;
                 },
                 get: function (){
-                    return zn.is(this._data, 'object') ? JSON.stringify(this._data) : this._data;
+                    if(this._method.toUpperCase()=='GET'){
+                        if(this._data){
+                            return zn.querystring.stringify(this._data);
+                        }else {
+                            return '';
+                        }
+                    }else {
+                        return zn.is(this._data, 'object') ? JSON.stringify(this._data) : this._data;
+                    }
                 }
             },
             method: 'GET',
@@ -3602,8 +3618,10 @@ if (__isServer) {
                     return '';
                 }
 
-                if(url && (url.indexOf('http://') == -1 || url.indexOf('https://') == -1)){
-                    url = this.getURL() + url;
+                if(url){
+                    if(url.indexOf('http://') == -1 && url.indexOf('https://') == -1){
+                        url = this.getURL() + url;
+                    }
                 }
 
                 return url;

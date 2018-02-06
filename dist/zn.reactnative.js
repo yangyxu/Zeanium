@@ -2819,7 +2819,15 @@ if (__isServer) {
                     this._data = value;
                 },
                 get: function (){
-                    return zn.is(this._data, 'object') ? JSON.stringify(this._data) : this._data;
+                    if(this._method.toUpperCase()=='GET'){
+                        if(this._data){
+                            return zn.querystring.stringify(this._data);
+                        }else {
+                            return '';
+                        }
+                    }else {
+                        return zn.is(this._data, 'object') ? JSON.stringify(this._data) : this._data;
+                    }
                 }
             },
             method: 'GET',
@@ -3030,8 +3038,10 @@ if (__isServer) {
                     return '';
                 }
 
-                if(url && (url.indexOf('http://') == -1 || url.indexOf('https://') == -1)){
-                    url = this.getURL() + url;
+                if(url){
+                    if(url.indexOf('http://') == -1 && url.indexOf('https://') == -1){
+                        url = this.getURL() + url;
+                    }
                 }
 
                 return url;
