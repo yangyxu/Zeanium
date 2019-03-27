@@ -46,5 +46,3 @@ yangyxu.name = 'test';
 //console.log(yangyxu.name);
 
 //yangyxu.notify('name');
-
-

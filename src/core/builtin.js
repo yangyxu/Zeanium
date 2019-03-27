@@ -180,7 +180,7 @@
                     _result;
                 for(var i = 0, _len = data.length; i < _len; i++){
                     _value = data[i];
-                    _result = handler && handler.call(context, _value, i, data);
+                    _result = handler && handler.call(context, _value, i, data, _data);
                     if(_result!==undefined&&_result!==null){
                         _data[_value] = _result;
                     }
