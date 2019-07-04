@@ -1,17 +1,16 @@
 {
     "name": "zeanium",
-    "version": "1.1.30",
+    "version": "2.0.1",
     "description": "Javascript OOP framework for Node.js and Browser, React Native. Simple MVVM model in data and view module.",
     "main": "zn.core.js",
     "directories": {
         "test": "test"
     },
     "scripts": {
-        "test": "qunit",
-        "build": "grunt --force"
+        "build": "gulp"
     },
     "author": "yangyxu",
-    "email": "945758912@qq.com",
+    "email": "xuyy0618@qq.com",
     "repository": {
         "type": "git",
         "url": "https://github.com/yangyxu/zeanium.git"
@@ -29,5 +28,10 @@
         "url": "https://github.com/yangyxu/zeanium/issues"
     },
     "homepage": "https://github.com/yangyxu/zeanium#readme",
-    "license": "MIT"
+    "license": "MIT",
+    "devDependencies": {
+        "gulp": "^4.0.2",
+        "gulp-concat": "^2.6.1",
+        "gulp-uglify": "^3.0.2"
+    }
 }

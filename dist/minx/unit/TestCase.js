@@ -1,0 +1,1 @@
+zn.Class("zn.unit.TestCase",{properties:{},methods:{init:function(){}}});
